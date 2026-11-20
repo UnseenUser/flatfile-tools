@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flat File, tools</title>
+<meta name="description" content="Free tools and policy pages for Flat File.">
+<style>
+:root{color-scheme:light dark;--ink:#1a1a18;--bg:#F2F1EC;--card:#fff;--line:#ddd9d0;--muted:#6b6862;--red:#BE4330}
+@media (prefers-color-scheme:dark){:root{--ink:#eceae4;--bg:#141413;--card:#1c1c1a;--line:#2f2e2a;--muted:#9b978d;--red:#E0705A}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  padding:0 max(20px,env(safe-area-inset-left,0px)) 80px max(20px,env(safe-area-inset-right,0px))}
+.w{max-width:620px;margin:0 auto;padding-top:70px}
+h1{font-size:30px;letter-spacing:-.025em;margin:0 0 6px}
+.sub{color:var(--muted);margin:0 0 36px}
+a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:8px;
+  padding:17px 19px;margin:0 0 10px;text-decoration:none;color:inherit}
+a.card:hover{border-color:var(--red)}
+.n{font-weight:650;margin:0 0 3px}
+.d{color:var(--muted);font-size:14.5px}
+footer{margin-top:40px;color:var(--muted);font-size:14px}
+footer a{color:inherit}
+</style></head><body>
+<div class="w">
+  <h1>Flat File</h1>
+  <p class="sub">A few things that live on the open web rather than behind a download.</p>
+
+  <a class="card" href="cutlist/">
+    <div class="n">Cut list calculator</div>
+    <div class="d">Cutting layouts for sheet goods, with the saw kerf subtracted and the grain
+    respected. Runs in your browser and sends nothing anywhere. Free, up to ten parts.</div>
+  </a>
+
+  <a class="card" href="sheetgrab/privacy.html">
+    <div class="n">Sheetgrab privacy policy</div>
+    <div class="d">What the Chrome extension collects, which is nothing, and the one host it
+    is allowed to contact.</div>
+  </a>
+
+  <footer>
+    The paid versions are at <a href="https://flatfile.gumroad.com">flatfile.gumroad.com</a>.
+  </footer>
+</div>
+</body></html>
