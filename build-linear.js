@@ -60,7 +60,9 @@ page = page.replace('<!-- HEAD_EXTRA -->', () => head);
  * cutting bar this week is cutting sheet next week. */
 page = page.replace('<!-- SIBLING -->', () =>
   '<p><b>Cutting sheet goods instead?</b> The <a href="../cutlist/">cut list calculator</a> does ' +
-  'the same job for plywood, MDF and any sheet material, with the grain direction respected.</p>');
+  'the same job for plywood, MDF and any sheet material, with the grain direction respected.</p>' +
+  '<p><b>Making a cone or a transition piece?</b> The <a href="../transition-pattern/">flat pattern ' +
+  'layout</a> develops it and gives the true lengths to mark it out.</p>');
 
 const bad = [
   [!page.includes('/* ENGINE_INLINE */'), 'the engine marker is still there'],

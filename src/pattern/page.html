@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flat Pattern Layout for Cones and Square to Round Transitions</title>
+<!-- HEAD_EXTRA -->
+<style>
+:root{
+  --paper:#F2F1EC; --card:#FBFAF7; --ink:#1A1A18; --muted:#6B6862; --line:#D9D6CD;
+  --red:#BE4330; --green:#2F6B36; --blue:#3C6E9B; --sunk:#EAE8E1;
+  --draw:#1A1A18; --fold:#9A958A; --ui:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141413; --card:#1C1C1A; --ink:#EDEBE4; --muted:#9B978D; --line:#2F2E2A;
+    --red:#E0705A; --green:#8FCB8B; --blue:#7FAEF0; --sunk:#232320;
+    --draw:#EDEBE4; --fold:#6B6862; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141413; --card:#1C1C1A; --ink:#EDEBE4; --muted:#9B978D; --line:#2F2E2A;
+  --red:#E0705A; --green:#8FCB8B; --blue:#7FAEF0; --sunk:#232320;
+  --draw:#EDEBE4; --fold:#6B6862; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--ui);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:36px 70px}
+.w{max-width:880px;margin:0 auto}
+h1{font-size:clamp(24px,5.2vw,32px);letter-spacing:-.025em;line-height:1.14;margin:0 0 8px;
+  font-weight:800;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 24px;max-width:60ch}
+h2{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-weight:700;margin:28px 0 10px}
+h3{font-size:17px;margin:24px 0 8px;letter-spacing:-.015em}
+select,input,button{font:inherit;color:inherit}
+select,input[type=number]{background:var(--card);border:1px solid var(--line);border-radius:5px;
+  padding:7px 9px;width:100%;min-width:0}
+input[type=number]{font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+button{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:7px 13px;cursor:pointer}
+button.go{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:650;padding:10px 22px}
+.bar-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(136px,1fr));gap:12px}
+.opts label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:3px}
+.hint{color:var(--muted);font-size:14px;margin:10px 0 0;max-width:64ch}
+.msg{border-radius:6px;padding:11px 14px;margin:0 0 9px;font-size:15px;line-height:1.5}
+.msg.bad{background:rgba(190,67,48,.12);color:var(--red)}
+.msg.note{background:var(--sunk);color:var(--muted)}
+.drawwrap{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:14px;
+  margin:0 0 16px;overflow-x:auto}
+svg.pat{display:block;width:100%;height:auto;max-width:100%}
+svg.pat .cut{fill:none;stroke:var(--draw);stroke-width:1.6;vector-effect:non-scaling-stroke}
+svg.pat .fold{fill:none;stroke:var(--fold);stroke-width:.8;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+svg.pat .seam{fill:none;stroke:var(--red);stroke-width:1.8;vector-effect:non-scaling-stroke}
+.scale{font-size:12.5px;color:var(--muted);font-family:var(--mono);margin:6px 0 0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px;margin:0 0 16px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:11px 13px}
+.tile .v{font-size:21px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2}
+.tile .k{font-size:11.5px;color:var(--muted);margin-top:1px}
+.scroll{overflow-x:auto;min-width:0;margin:0 0 14px}
+table.t{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;min-width:420px}
+table.t th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;text-align:left;padding:6px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:5px 9px;border-bottom:1px solid var(--line);font-family:var(--mono)}
+table.t td:first-child{font-family:var(--ui);white-space:nowrap}
+.prose{border-top:1.5px solid var(--line);margin-top:44px;padding-top:26px;max-width:64ch}
+.prose p{margin:0 0 13px}
+.prose a{color:inherit}
+footer{border-top:1.5px solid var(--line);margin-top:32px;padding-top:20px;font-size:14px;
+  color:var(--muted);max-width:64ch}
+footer b{color:var(--ink)}
+footer p{margin:0 0 10px}
+.hide{display:none}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .noprint{display:none!important}
+  .drawwrap{border:0;padding:0;background:#fff}
+  svg.pat .cut{stroke:#000}
+  svg.pat .fold{stroke:#777}
+}
+</style>
+</head>
+<body>
+<div class="w">
+
+  <h1>Flat Pattern Layout</h1>
+  <p class="sub">Develops the flat pattern for a cone, a frustum or a square to round transition,
+  by triangulation, and gives you the true lengths to mark it out with a tape and trammel. Runs in
+  your browser and sends nothing anywhere.</p>
+
+  <div class="bar-top noprint">
+    <select id="shape" style="max-width:260px">
+      <option value="cone">Cone or frustum, round to round</option>
+      <option value="sqround">Square or rectangle to round</option>
+    </select>
+    <button id="print">Print</button>
+    <span style="flex:1"></span>
+    <button class="go" id="go">Develop</button>
+  </div>
+
+  <div id="fCone">
+    <h2>The piece</h2>
+    <div class="opts">
+      <div><label for="cBot">Bottom diameter</label><input type="number" id="cBot" value="400" step="1" min="0"></div>
+      <div><label for="cTop">Top diameter</label><input type="number" id="cTop" value="200" step="1" min="0"></div>
+      <div><label for="cH">Height</label><input type="number" id="cH" value="300" step="1" min="0"></div>
+    </div>
+    <p class="hint noprint">Top diameter zero gives a full cone. Equal diameters give a plain
+    cylinder, and the tool says so rather than dividing by zero.</p>
+  </div>
+
+  <div id="fSq" class="hide">
+    <h2>The piece</h2>
+    <div class="opts">
+      <div><label for="sW">Rectangle width</label><input type="number" id="sW" value="400" step="1" min="0"></div>
+      <div><label for="sD">Rectangle depth</label><input type="number" id="sD" value="400" step="1" min="0"></div>
+      <div><label for="sT">Top diameter</label><input type="number" id="sT" value="250" step="1" min="0"></div>
+      <div><label for="sH">Height</label><input type="number" id="sH" value="350" step="1" min="0"></div>
+      <div><label for="sOX">Offset across</label><input type="number" id="sOX" value="0" step="1"></div>
+      <div><label for="sOY">Offset along</label><input type="number" id="sOY" value="0" step="1"></div>
+      <div><label for="sSeg">Divisions per corner</label><input type="number" id="sSeg" value="8" step="1" min="2" max="24"></div>
+    </div>
+    <p class="hint noprint">Divisions decide how round the round end really is. Six is the usual
+    minimum, twelve for anything that has to look round, and more than that stops mattering before
+    it stops costing you marking time.</p>
+  </div>
+
+  <div id="out" style="margin-top:26px"></div>
+
+  <div class="prose">
+    <h3>How a pattern is actually developed</h3>
+    <p>You cannot flatten a cone by measuring the drawing, because every sloping line you see in
+    plan is foreshortened. The real length of a sloping edge is the hypotenuse of a right triangle
+    whose base is the distance between its ends in plan and whose height is the rise. Get that one
+    idea and the rest is bookkeeping.</p>
+    <p>A square to round is then built as four flat triangles, one standing on each side of the
+    rectangle, with a cone quarter at each corner. The corner is approximated by a fan of triangles
+    running from the rectangle corner out to points around the circle, which is exactly what you
+    would do by hand, with more patience than most people have.</p>
+
+    <h3>The numbers matter more than the picture</h3>
+    <p>The drawing on this page shows you the shape and where the folds go. What you take to the
+    plate is the table of true lengths: swing an arc from each rectangle corner at each listed
+    radius, step round, and join. That is how these have been marked out since long before anyone
+    had a printer that could manage a 1200mm sheet, and it works at any size.</p>
+
+    <h3>What this does not do</h3>
+    <p>No bend allowance and no thickness. The pattern is the developed surface, so for anything
+    but thin sheet you need to work to the neutral axis yourself. No seam or lap allowance either:
+    add what your joint needs. And it assumes the two ends are parallel.</p>
+
+    <h3>It sends nothing anywhere</h3>
+    <p>The page runs entirely in your browser. No account, no upload, no server: once it has
+    loaded it contacts nothing at all and keeps working with the network off.</p>
+  </div>
+
+  <footer>
+    <p><b>Free to use</b>, for anything, including work you are paid for.</p>
+    <p><b>Check it before you cut.</b> Mark one pattern, lay it on the job, and satisfy yourself the
+    numbers are right before you commit expensive plate to them. Sold as is, with no warranty of
+    any kind.</p>
+    <p><b>Something wrong?</b> Write to rahovichmichael@gmail.com with the numbers you put in.</p>
+    <!-- SIBLING -->
+  </footer>
+</div>
+
+<script>
+/* GEOMETRY_INLINE */
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);};
+var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+var n=function(i){var v=parseFloat($(i).value);return isFinite(v)?v:0;};
+var f=function(x){return (Math.round(x*100)/100).toLocaleString();};
+
+function svgWrap(paths, minX, minY, w, h, scaleNote){
+  var pad = Math.max(w,h)*0.04;
+  return '<div class="drawwrap"><svg class="pat" viewBox="'+(minX-pad)+' '+(minY-pad)+' '+
+    (w+pad*2)+' '+(h+pad*2)+'" preserveAspectRatio="xMidYMid meet" '+
+    'style="max-height:460px">'+paths+'</svg>'+
+    '<p class="scale">'+esc(scaleNote)+'</p></div>';
+}
+
+function drawCone(c){
+  if (c.kind==='cylinder'){
+    var W=c.rect.width, H=c.rect.height;
+    var p='<rect class="cut" x="0" y="0" width="'+W+'" height="'+H+'"/>'+
+          '<line class="seam" x1="0" y1="0" x2="0" y2="'+H+'"/>';
+    return svgWrap(p,0,0,W,H,'A rectangle '+f(W)+' by '+f(H)+'. The red edge is the seam.');
+  }
+  var A=c.bigRadius, a=c.smallRadius, th=c.angleDeg*Math.PI/180;
+  // sector centred on straight up, so it sits nicely in the box
+  var s=-Math.PI/2-th/2, e=-Math.PI/2+th/2;
+  var pt=function(r,t){return [r*Math.cos(t), r*Math.sin(t)];};
+  var o1=pt(A,s),o2=pt(A,e),i1=pt(a,s),i2=pt(a,e);
+  var big = th>Math.PI?1:0;
+  var d='M '+o1[0]+' '+o1[1]+' A '+A+' '+A+' 0 '+big+' 1 '+o2[0]+' '+o2[1]+
+        ' L '+i2[0]+' '+i2[1]+(a>0?(' A '+a+' '+a+' 0 '+big+' 0 '+i1[0]+' '+i1[1]):'')+' Z';
+  /* Both radial edges are the seam: they are the two halves of one joint,
+   * brought together when the pattern is rolled. Drawing only one of them in
+   * red, which is what this did at first, says the other is a plain cut. */
+  var p='<path class="cut" d="'+d+'"/>'+
+        '<line class="seam" x1="'+o1[0]+'" y1="'+o1[1]+'" x2="'+i1[0]+'" y2="'+i1[1]+'"/>'+
+        '<line class="seam" x1="'+o2[0]+'" y1="'+o2[1]+'" x2="'+i2[0]+'" y2="'+i2[1]+'"/>';
+  /* The trammel centre is NOT in the drawing. On an ordinary frustum it sits
+   * further away than the whole ring is wide, so including it leaves most of
+   * the frame empty and shrinks the part worth looking at. The distance to it
+   * is in the setting out panel, which is where it gets used. */
+  var xs=[o1[0],o2[0],i1[0],i2[0]], ys=[o1[1],o2[1],i1[1],i2[1]];
+  // the arc bulges past its endpoints, so walk the sweep for the real extent
+  for(var t=s;t<e;t+=0.02){var q=pt(A,t);xs.push(q[0]);ys.push(q[1]);}
+  var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
+  var minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
+  return svgWrap(p,minX,minY,maxX-minX,maxY-minY,
+    'Both red edges are the seam: they come together when it is rolled. ' +
+    'The centre to swing from is '+f(A)+' away, outside this view.');
+}
+
+function drawSqRound(s){
+  var d=s.development, pts=d.base.concat(d.top);
+  var xs=pts.map(function(p){return p[0];}), ys=pts.map(function(p){return p[1];});
+  var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
+  var minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
+  var line=function(a,b,cls){return '<line class="'+cls+'" x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'"/>';};
+  var p='';
+  d.folds.forEach(function(fd){ p+=line(fd[0],fd[1],'fold'); });
+  p+='<polyline class="cut" points="'+d.base.map(function(q){return q.join(',');}).join(' ')+'"/>';
+  p+='<polyline class="cut" points="'+d.top.map(function(q){return q.join(',');}).join(' ')+'"/>';
+  p+=line(d.base[0],d.top[0],'seam');
+  p+=line(d.base[d.base.length-1],d.top[d.top.length-1],'seam');
+  return svgWrap(p,minX,minY,maxX-minX,maxY-minY,
+    'Solid lines are cut. Dashed lines are folds. The two red edges meet at the seam.');
+}
+
+function run(){
+  var kind=$('shape').value, out=$('out'), h='';
+  if (kind==='cone'){
+    var c=Pattern.cone({bottomDia:n('cBot'),topDia:n('cTop'),height:n('cH')});
+    if (c.error){ out.innerHTML='<div class="msg bad">'+esc(c.error)+'</div>'; return; }
+    (c.warn||[]).forEach(function(w){ h+='<div class="msg bad">'+esc(w)+'</div>'; });
+    if (c.note) h+='<div class="msg note">'+esc(c.note)+'</div>';
+    h+=drawCone(c);
+    if (c.kind==='cone'){
+      h+='<div class="tiles">'+
+        '<div class="tile"><div class="v">'+f(c.setOut.centreToOuter)+'</div><div class="k">centre to outer arc</div></div>'+
+        '<div class="tile"><div class="v">'+f(c.setOut.centreToInner)+'</div><div class="k">centre to inner arc</div></div>'+
+        '<div class="tile"><div class="v">'+f(c.angleDeg)+'&deg;</div><div class="k">included angle</div></div>'+
+        '<div class="tile"><div class="v">'+f(c.slant)+'</div><div class="k">slant height</div></div>'+
+        '</div>'+
+        '<div class="msg note"><b>To mark it out:</b> set a trammel to '+f(c.setOut.centreToOuter)+
+        ' and swing the outer arc, reset to '+f(c.setOut.centreToInner)+' and swing the inner one, '+
+        'both from the same centre. Step the outer arc off at '+f(c.arcBig)+' measured round the '+
+        'curve, or set the included angle to '+f(c.angleDeg)+' degrees. Join the ends to the centre.</div>';
+    }
+  } else {
+    var s=Pattern.squareToRound({width:n('sW'),depth:n('sD'),topDia:n('sT'),height:n('sH'),
+      offsetX:n('sOX'),offsetY:n('sOY'),segments:n('sSeg')});
+    if (s.error){ out.innerHTML='<div class="msg bad">'+esc(s.error)+'</div>'; return; }
+    (s.warn||[]).forEach(function(w){ h+='<div class="msg bad">'+esc(w)+'</div>'; });
+    h+=drawSqRound(s);
+    h+='<div class="tiles">'+
+      '<div class="tile"><div class="v">'+f(s.perimeter)+'</div><div class="k">base perimeter</div></div>'+
+      '<div class="tile"><div class="v">'+f(s.circumference)+'</div><div class="k">top circumference</div></div>'+
+      '<div class="tile"><div class="v">'+s.triangles.length+'</div><div class="k">triangles</div></div>'+
+      '<div class="tile"><div class="v">'+s.segments+'</div><div class="k">divisions per corner</div></div>'+
+      '</div>';
+    h+='<h2>True lengths, corner to circle</h2>'+
+       '<div class="msg note">Swing an arc from each rectangle corner at each of these radii. ' +
+       'They are true lengths, already including the rise, so measure them flat on the plate.</div>'+
+       '<div class="scroll"><table class="t"><thead><tr><th>From</th>';
+    for (var k=0;k<=s.segments;k++) h+='<th>'+k+'</th>';
+    h+='</tr></thead><tbody>';
+    s.marks.forEach(function(m){
+      h+='<tr><td>'+esc(m.corner)+'</td>'+m.lengths.map(function(L){return '<td>'+f(L)+'</td>';}).join('')+'</tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  out.innerHTML=h;
+}
+
+$('shape').onchange=function(){
+  var c=this.value==='cone';
+  $('fCone').className=c?'':'hide';
+  $('fSq').className=c?'hide':'';
+  run();
+};
+$('go').onclick=run;
+$('print').onclick=function(){window.print();};
+run();
+})();
+</script>
+</body>
+</html>

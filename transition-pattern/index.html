@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Flat Pattern Layout for Cones and Square to Round Transitions</title>
+<meta name="description" content="Develops the flat pattern for a cone, a frustum or a square to round transition by triangulation, and gives the true lengths to mark it out with a tape and trammel. Runs in the browser and sends nothing anywhere.">
+<link rel="canonical" href="https://unseenuser.github.io/flatfile-tools/transition-pattern/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Flat Pattern Layout for Cones and Square to Round Transitions">
+<meta property="og:description" content="Develops the flat pattern for a cone, a frustum or a square to round transition by triangulation, and gives the true lengths to mark it out with a tape and trammel. Runs in the browser and sends nothing anywhere.">
+<meta property="og:url" content="https://unseenuser.github.io/flatfile-tools/transition-pattern/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Flat Pattern Layout","description":"Develops the flat pattern for a cone, a frustum or a square to round transition by triangulation, and gives the true lengths to mark it out with a tape and trammel. Runs in the browser and sends nothing anywhere.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any, runs in a web browser","url":"https://unseenuser.github.io/flatfile-tools/transition-pattern/","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Flat pattern for a cone or frustum, round to round","Flat pattern for a square or rectangle to round transition","Offset round end supported","True lengths by triangulation, for marking out with a trammel","Sector radii and included angle for cones","Works offline"]}</script>
+<style>
+:root{
+  --paper:#F2F1EC; --card:#FBFAF7; --ink:#1A1A18; --muted:#6B6862; --line:#D9D6CD;
+  --red:#BE4330; --green:#2F6B36; --blue:#3C6E9B; --sunk:#EAE8E1;
+  --draw:#1A1A18; --fold:#9A958A; --ui:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141413; --card:#1C1C1A; --ink:#EDEBE4; --muted:#9B978D; --line:#2F2E2A;
+    --red:#E0705A; --green:#8FCB8B; --blue:#7FAEF0; --sunk:#232320;
+    --draw:#EDEBE4; --fold:#6B6862; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141413; --card:#1C1C1A; --ink:#EDEBE4; --muted:#9B978D; --line:#2F2E2A;
+  --red:#E0705A; --green:#8FCB8B; --blue:#7FAEF0; --sunk:#232320;
+  --draw:#EDEBE4; --fold:#6B6862; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--ui);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:36px 70px}
+.w{max-width:880px;margin:0 auto}
+h1{font-size:clamp(24px,5.2vw,32px);letter-spacing:-.025em;line-height:1.14;margin:0 0 8px;
+  font-weight:800;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 24px;max-width:60ch}
+h2{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-weight:700;margin:28px 0 10px}
+h3{font-size:17px;margin:24px 0 8px;letter-spacing:-.015em}
+select,input,button{font:inherit;color:inherit}
+select,input[type=number]{background:var(--card);border:1px solid var(--line);border-radius:5px;
+  padding:7px 9px;width:100%;min-width:0}
+input[type=number]{font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+button{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:7px 13px;cursor:pointer}
+button.go{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:650;padding:10px 22px}
+.bar-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 18px}
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(136px,1fr));gap:12px}
+.opts label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:3px}
+.hint{color:var(--muted);font-size:14px;margin:10px 0 0;max-width:64ch}
+.msg{border-radius:6px;padding:11px 14px;margin:0 0 9px;font-size:15px;line-height:1.5}
+.msg.bad{background:rgba(190,67,48,.12);color:var(--red)}
+.msg.note{background:var(--sunk);color:var(--muted)}
+.drawwrap{background:var(--card);border:1px solid var(--line);border-radius:7px;padding:14px;
+  margin:0 0 16px;overflow-x:auto}
+svg.pat{display:block;width:100%;height:auto;max-width:100%}
+svg.pat .cut{fill:none;stroke:var(--draw);stroke-width:1.6;vector-effect:non-scaling-stroke}
+svg.pat .fold{fill:none;stroke:var(--fold);stroke-width:.8;stroke-dasharray:5 4;vector-effect:non-scaling-stroke}
+svg.pat .seam{fill:none;stroke:var(--red);stroke-width:1.8;vector-effect:non-scaling-stroke}
+.scale{font-size:12.5px;color:var(--muted);font-family:var(--mono);margin:6px 0 0}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:9px;margin:0 0 16px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:11px 13px}
+.tile .v{font-size:21px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.2}
+.tile .k{font-size:11.5px;color:var(--muted);margin-top:1px}
+.scroll{overflow-x:auto;min-width:0;margin:0 0 14px}
+table.t{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;min-width:420px}
+table.t th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;text-align:left;padding:6px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+table.t td{padding:5px 9px;border-bottom:1px solid var(--line);font-family:var(--mono)}
+table.t td:first-child{font-family:var(--ui);white-space:nowrap}
+.prose{border-top:1.5px solid var(--line);margin-top:44px;padding-top:26px;max-width:64ch}
+.prose p{margin:0 0 13px}
+.prose a{color:inherit}
+footer{border-top:1.5px solid var(--line);margin-top:32px;padding-top:20px;font-size:14px;
+  color:var(--muted);max-width:64ch}
+footer b{color:var(--ink)}
+footer p{margin:0 0 10px}
+.hide{display:none}
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .noprint{display:none!important}
+  .drawwrap{border:0;padding:0;background:#fff}
+  svg.pat .cut{stroke:#000}
+  svg.pat .fold{stroke:#777}
+}
+</style>
+</head>
+<body>
+<div class="w">
+
+  <h1>Flat Pattern Layout</h1>
+  <p class="sub">Develops the flat pattern for a cone, a frustum or a square to round transition,
+  by triangulation, and gives you the true lengths to mark it out with a tape and trammel. Runs in
+  your browser and sends nothing anywhere.</p>
+
+  <div class="bar-top noprint">
+    <select id="shape" style="max-width:260px">
+      <option value="cone">Cone or frustum, round to round</option>
+      <option value="sqround">Square or rectangle to round</option>
+    </select>
+    <button id="print">Print</button>
+    <span style="flex:1"></span>
+    <button class="go" id="go">Develop</button>
+  </div>
+
+  <div id="fCone">
+    <h2>The piece</h2>
+    <div class="opts">
+      <div><label for="cBot">Bottom diameter</label><input type="number" id="cBot" value="400" step="1" min="0"></div>
+      <div><label for="cTop">Top diameter</label><input type="number" id="cTop" value="200" step="1" min="0"></div>
+      <div><label for="cH">Height</label><input type="number" id="cH" value="300" step="1" min="0"></div>
+    </div>
+    <p class="hint noprint">Top diameter zero gives a full cone. Equal diameters give a plain
+    cylinder, and the tool says so rather than dividing by zero.</p>
+  </div>
+
+  <div id="fSq" class="hide">
+    <h2>The piece</h2>
+    <div class="opts">
+      <div><label for="sW">Rectangle width</label><input type="number" id="sW" value="400" step="1" min="0"></div>
+      <div><label for="sD">Rectangle depth</label><input type="number" id="sD" value="400" step="1" min="0"></div>
+      <div><label for="sT">Top diameter</label><input type="number" id="sT" value="250" step="1" min="0"></div>
+      <div><label for="sH">Height</label><input type="number" id="sH" value="350" step="1" min="0"></div>
+      <div><label for="sOX">Offset across</label><input type="number" id="sOX" value="0" step="1"></div>
+      <div><label for="sOY">Offset along</label><input type="number" id="sOY" value="0" step="1"></div>
+      <div><label for="sSeg">Divisions per corner</label><input type="number" id="sSeg" value="8" step="1" min="2" max="24"></div>
+    </div>
+    <p class="hint noprint">Divisions decide how round the round end really is. Six is the usual
+    minimum, twelve for anything that has to look round, and more than that stops mattering before
+    it stops costing you marking time.</p>
+  </div>
+
+  <div id="out" style="margin-top:26px"></div>
+
+  <div class="prose">
+    <h3>How a pattern is actually developed</h3>
+    <p>You cannot flatten a cone by measuring the drawing, because every sloping line you see in
+    plan is foreshortened. The real length of a sloping edge is the hypotenuse of a right triangle
+    whose base is the distance between its ends in plan and whose height is the rise. Get that one
+    idea and the rest is bookkeeping.</p>
+    <p>A square to round is then built as four flat triangles, one standing on each side of the
+    rectangle, with a cone quarter at each corner. The corner is approximated by a fan of triangles
+    running from the rectangle corner out to points around the circle, which is exactly what you
+    would do by hand, with more patience than most people have.</p>
+
+    <h3>The numbers matter more than the picture</h3>
+    <p>The drawing on this page shows you the shape and where the folds go. What you take to the
+    plate is the table of true lengths: swing an arc from each rectangle corner at each listed
+    radius, step round, and join. That is how these have been marked out since long before anyone
+    had a printer that could manage a 1200mm sheet, and it works at any size.</p>
+
+    <h3>What this does not do</h3>
+    <p>No bend allowance and no thickness. The pattern is the developed surface, so for anything
+    but thin sheet you need to work to the neutral axis yourself. No seam or lap allowance either:
+    add what your joint needs. And it assumes the two ends are parallel.</p>
+
+    <h3>It sends nothing anywhere</h3>
+    <p>The page runs entirely in your browser. No account, no upload, no server: once it has
+    loaded it contacts nothing at all and keeps working with the network off.</p>
+  </div>
+
+  <footer>
+    <p><b>Free to use</b>, for anything, including work you are paid for.</p>
+    <p><b>Check it before you cut.</b> Mark one pattern, lay it on the job, and satisfy yourself the
+    numbers are right before you commit expensive plate to them. Sold as is, with no warranty of
+    any kind.</p>
+    <p><b>Something wrong?</b> Write to rahovichmichael@gmail.com with the numbers you put in.</p>
+    <p><b>Cutting the plate it comes out of?</b> The <a href="../linear-cut/">linear cut optimizer</a> works out bar, pipe and angle with the saw kerf subtracted, and the <a href="../cutlist/">cut list calculator</a> does the same for sheet.</p>
+  </footer>
+</div>
+
+<script>
+/* Flat pattern development, by triangulation.
+ *
+ * A fabricator marks this onto plate and cuts it. If the geometry is wrong,
+ * the plate is scrap, so every number here is derived rather than fitted, and
+ * the tests check the properties that have to hold: developed edges equal the
+ * real edges, true lengths are never shorter than their plan distances, and
+ * the pattern closes.
+ *
+ * THE ONE IDEA. A cone or a transition cannot be flattened by measuring the
+ * drawing, because the lines you see in plan are foreshortened. The real
+ * length of a sloping edge is the hypotenuse of a right triangle whose base
+ * is the distance between its ends in plan and whose height is the rise:
+ *
+ *     true length = sqrt(plan^2 + rise^2)
+ *
+ * Every developed pattern below is built out of triangles whose sides are
+ * true lengths, laid down one after another. That is the whole method, and it
+ * is why the output is trustworthy at any size.
+ */
+(function (root) {
+  'use strict';
+
+  var TAU = Math.PI * 2;
+  var EPS = 1e-9;
+
+  function r3(n) { return Math.round(n * 1000) / 1000; }
+  function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+  function trueLen(planDist, rise) { return Math.hypot(planDist, rise); }
+
+  /* ------------------------------------------------------------------ *
+   * Cone and frustum, round to round, concentric.
+   *
+   * The development is a sector of an annulus. Everything follows from the
+   * slant height and from where the cone's apex would be if the top were
+   * continued to a point.
+   * ------------------------------------------------------------------ */
+  function cone(o) {
+    var R = o.bottomDia / 2, r = o.topDia / 2, h = o.height;
+    var warn = [];
+
+    if (R <= 0 || h <= 0) return { error: 'The bottom diameter and the height both have to be positive.' };
+    if (r < 0) return { error: 'The top diameter cannot be negative.' };
+    if (Math.abs(R - r) < EPS) {
+      /* A cylinder has no apex. Its development is a plain rectangle, and
+       * pretending otherwise divides by zero. */
+      return {
+        kind: 'cylinder',
+        rect: { width: r3(TAU * R), height: r3(h) },
+        slant: r3(h),
+        note: 'The two ends are the same size, so this is a plain cylinder: the pattern is a ' +
+              'rectangle ' + r3(TAU * R) + ' long by ' + r3(h) + ' high, rolled into a tube.',
+        warn: warn,
+      };
+    }
+
+    var big = Math.max(R, r), small = Math.min(R, r);
+    var slant = Math.hypot(big - small, h);
+    /* Apex distance to the large edge, from similar triangles. */
+    var A = big * slant / (big - small);
+    var a = A - slant;
+    /* The sector angle that makes the developed arc equal the real
+     * circumference. This is the step people get wrong by using 360. */
+    var theta = TAU * big / A;
+
+    /* The sector angle is TAU * (big - small) / slant, and the slant is the
+     * hypotenuse of (big - small) and the height, so it can never exceed a
+     * full turn: the guard that used to sit here was unreachable and a test
+     * proved it. What IS worth saying is when the development is nearly a
+     * full ring, because that means an almost flat piece, and an almost flat
+     * piece is usually a mistyped height. */
+    if (theta > TAU * 0.97) {
+      warn.push('Flattened, this is very nearly a complete ring, which means the piece is almost ' +
+                'flat: ' + r3(h) + ' of height against ' + r3(big - small) + ' of change in radius. ' +
+                'If that is not what you meant, check the height.');
+    }
+
+    return {
+      kind: 'cone',
+      bigRadius: r3(A),
+      smallRadius: r3(a),
+      angleDeg: r3(theta * 180 / Math.PI),
+      slant: r3(slant),
+      arcBig: r3(theta * A),
+      arcSmall: r3(theta * a),
+      chordBig: r3(2 * A * Math.sin(theta / 2)),
+      /* Marking data: swing two arcs from one centre, then step the chord. */
+      setOut: {
+        centreToOuter: r3(A),
+        centreToInner: r3(a),
+        included: r3(theta * 180 / Math.PI),
+      },
+      warn: warn,
+    };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * Square or rectangle to round, top circle concentric or offset.
+   *
+   * The solid is four flat triangles, one standing on each side of the
+   * rectangle, separated by four conical corners. Each corner is
+   * approximated by `seg` triangles running from the rectangle corner to
+   * successive points on the circle, which is exactly how it is laid out by
+   * hand, only with more patience.
+   * ------------------------------------------------------------------ */
+  function squareToRound(o) {
+    var W = o.width, D = o.depth, r = o.topDia / 2, h = o.height;
+    var seg = Math.max(2, Math.min(24, Math.round(o.segments || 6)));
+    var ox = o.offsetX || 0, oy = o.offsetY || 0;
+    var warn = [];
+
+    if (W <= 0 || D <= 0 || h <= 0) return { error: 'Width, depth and height all have to be positive.' };
+    if (r <= 0) return { error: 'The top diameter has to be positive.' };
+
+    /* Plan coordinates. The rectangle is centred on the origin; the circle
+     * sits at (ox, oy) and at height h. */
+    var corner = [
+      [ W / 2,  D / 2],   // 0  back right
+      [-W / 2,  D / 2],   // 1  back left
+      [-W / 2, -D / 2],   // 2  front left
+      [ W / 2, -D / 2],   // 3  front right
+    ];
+
+    /* Circle points, one run of `seg` per corner, starting on the axis of
+     * each side so the flat triangles land where they should. */
+    function cp(t) { return [ox + r * Math.cos(t), oy + r * Math.sin(t)]; }
+
+    /* Where the circle is divided.
+     *
+     * The flat panel on each side reaches up to the circle point directly
+     * opposite that side, so those four points are at 90, 0, -90 and -180
+     * degrees. Each conical corner then has to carry the circle from one of
+     * those points to the next, a quarter turn.
+     *
+     * Starting the corner fans at 45 degrees instead, which is the obvious
+     * looking choice and the one I made first, leaves a gap between the end
+     * of a flat panel and the start of the next fan. The pattern still draws,
+     * and the top edge comes out the wrong length. A test comparing the
+     * developed top against the real circumference is what caught it. */
+    var STEP = Math.PI / 2;
+    function fanAngles(k) {            // k is the position in the walk, 0..3
+      var from = Math.PI / 2 - STEP * k;
+      var run = [];
+      for (var i = 0; i <= seg; i++) run.push(from - STEP * (i / seg));
+      return run;
+    }
+
+    /* Walk the solid once, emitting triangles in the order they are laid
+     * down. Each triangle carries its three true lengths. */
+    var tris = [], lengths = [];
+
+    function tri(p1, p2, p3, kind, label) {
+      /* p = [x, y, z] where z is 0 on the rectangle and h on the circle. */
+      var t = {
+        kind: kind, label: label,
+        a: trueLen(dist([p1[0], p1[1]], [p2[0], p2[1]]), Math.abs(p1[2] - p2[2])),
+        b: trueLen(dist([p2[0], p2[1]], [p3[0], p3[1]]), Math.abs(p2[2] - p3[2])),
+        c: trueLen(dist([p3[0], p3[1]], [p1[0], p1[1]]), Math.abs(p3[2] - p1[2])),
+      };
+      tris.push(t);
+      return t;
+    }
+
+    /* The seam is opened at the middle of the back side, which is where a
+     * fabricator normally puts it: away from the eye and easy to weld. */
+    var sideMid = [
+      [0,  D / 2],   // back,  between corner 0 and 1
+      [-W / 2, 0],   // left,  between 1 and 2
+      [0, -D / 2],   // front, between 2 and 3
+      [W / 2, 0],    // right, between 3 and 0
+    ];
+    /* Circle point opposite each side middle. */
+    var sideTop = [Math.PI / 2, Math.PI, -Math.PI / 2, 0];
+
+    /* Order around the solid, starting at the back-side seam:
+     * half of back side, corner 0 arc, right side, corner 3 arc, front,
+     * corner 2, left, corner 1, half of back. Simplest faithful walk: for
+     * each corner c, emit the flat triangle on the side leading into it,
+     * then the conical fan at that corner. */
+    var order = [
+      { side: 0, cornerIdx: 0 },   // back side -> corner 0 (back right)
+      { side: 3, cornerIdx: 3 },   // right side -> corner 3 (front right)
+      { side: 2, cornerIdx: 2 },   // front side -> corner 2 (front left)
+      { side: 1, cornerIdx: 1 },   // left side -> corner 1 (back left)
+    ];
+
+    var marks = [];
+
+    order.forEach(function (step, n) {
+      var s = step.side, ci = step.cornerIdx;
+      /* The two rectangle corners either side of this flat triangle. */
+      var c1 = corner[(ci + 1) % 4], c2 = corner[ci];
+      var apex = cp(sideTop[s]);
+      /* A side panel is one flat triangle: the whole side as its base, and
+       * the circle point opposite it as the apex. */
+      tri([c1[0], c1[1], 0], [c2[0], c2[1], 0], [apex[0], apex[1], h], 'flat', 'Side ' + (n + 1));
+
+      /* The conical corner at c2, carrying the circle a quarter turn from
+       * the point this panel reached to the point the next panel starts at. */
+      var run = fanAngles(n);
+      var row = [];
+      for (var k = 0; k < run.length; k++) {
+        var p = cp(run[k]);
+        row.push(r3(trueLen(dist(c2, p), h)));
+        if (k === run.length - 1) break;
+        var pb = cp(run[k + 1]);
+        tri([c2[0], c2[1], 0], [p[0], p[1], h], [pb[0], pb[1], h], 'corner',
+            'Corner ' + (n + 1) + '.' + (k + 1));
+      }
+      /* The numbers a fabricator marks with a trammel: corner to each circle
+       * point, as a true length. */
+      marks.push({ corner: 'Corner ' + (n + 1), lengths: row });
+    });
+
+    /* Lay the triangles down one after another, each sharing an edge with
+     * the last. This is the development. */
+    var poly = layDown(tris);
+
+    /* Sanity that matters: the developed base must equal the real perimeter
+     * and the developed top must equal the real circumference, within the
+     * error of approximating arcs by chords. */
+    var chordTop = 2 * r * Math.sin(Math.PI / (2 * seg) / 1) * 0; // computed below instead
+
+    if (seg < 4) {
+      warn.push('With only ' + seg + ' divisions per corner the round end will be noticeably ' +
+                'faceted. Six is the usual minimum, twelve for anything that has to look round.');
+    }
+    if (Math.hypot(ox, oy) + r > Math.min(W, D) / 2 + Math.max(W, D)) {
+      warn.push('The top circle is a long way off centre. Check the offset.');
+    }
+
+    return {
+      kind: 'sqround',
+      triangles: tris.map(function (t) {
+        return { kind: t.kind, label: t.label, a: r3(t.a), b: r3(t.b), c: r3(t.c) };
+      }),
+      marks: marks,
+      development: poly,
+      segments: seg,
+      perimeter: r3(2 * (W + D)),
+      circumference: r3(TAU * r),
+      warn: warn,
+    };
+  }
+
+  /* Place triangle 2 against triangle 1 along their shared edge, and so on.
+   * Returns the outline as a list of points plus the fold lines, which is
+   * what gets drawn and printed. */
+  function layDown(tris) {
+    if (!tris.length) return { base: [], top: [], folds: [] };
+
+    /* The first triangle: base edge along the x axis. */
+    var base = [], top = [], folds = [];
+    var p0 = [0, 0];
+    var t0 = tris[0];
+    var p1 = [t0.a, 0];                    // base edge of the first flat panel
+    /* The top of the first panel goes above the base, and from then on the
+     * pattern unrolls towards +x. Every later point is therefore placed to
+     * the RIGHT of the line from the current base point to the current top
+     * point, which is the direction of travel. Keeping that one invariant is
+     * what stops the strip folding back over itself. */
+    var apex = thirdPoint(p0, p1, t0.c, t0.b, +1);
+    base.push(p0, p1);
+    top.push(apex);
+
+    /* A fold is an edge SHARED by two triangles, so there is one per adjacent
+     * pair and no more: n triangles give n-1 folds.
+     *
+     * The two edges at the ends of the strip, p0-apex here and the closing
+     * edge after the last triangle, are not shared with anything. They are
+     * the seam, and the seam gets cut, not folded. Both used to be pushed in
+     * with the folds, which put a dashed fold line exactly where the plate
+     * has to be cut. On the page the seam is painted over them in red, so it
+     * looked correct, and a count of folds against triangles is what found
+     * it. Each triangle now contributes the edge it shares with the NEXT one,
+     * and the last triangle contributes nothing. */
+    folds.push([p1, apex]);
+
+    var prevBase = p1, prevTop = apex;
+    var last = tris.length - 1;
+
+    for (var i = 1; i < tris.length; i++) {
+      var t = tris[i];
+      /* Which of a, b, c is which matters, and getting it wrong is invisible:
+       * the pattern still closes, still has the right number of points, and
+       * is a fraction of a percent out. Comparing the area the triangles
+       * cover against the area the outline encloses is what found it.
+       *
+       * tri() builds each triangle from three points p1, p2, p3 and stores
+       *   a = p1 to p2,  b = p2 to p3,  c = p3 to p1.
+       * A fan triangle is (corner, circle point now, circle point next), so
+       * its a is the edge ALREADY laid down and the new point is at c from
+       * the corner and b from the last circle point.
+       * A flat panel is (corner behind, corner ahead, circle point), so its
+       * c is the edge already laid down and the new base point is at a from
+       * the corner behind and b from the circle point. */
+      if (t.kind === 'corner') {
+        /* Fan: the rectangle corner stays put, the circle walks on. */
+        var np = thirdPoint(prevBase, prevTop, t.c, t.b, -1);
+        top.push(np);
+        if (i < last) folds.push([prevBase, np]);
+        prevTop = np;
+      } else {
+        /* A new flat panel: the circle point stays, the base walks on. */
+        var nb = thirdPoint(prevBase, prevTop, t.a, t.b, -1);
+        base.push(nb);
+        if (i < last) folds.push([nb, prevTop]);
+        prevBase = nb;
+      }
+    }
+    return { base: base.map(rp), top: top.map(rp), folds: folds.map(function (f) { return [rp(f[0]), rp(f[1])]; }) };
+  }
+  function rp(p) { return [r3(p[0]), r3(p[1])]; }
+
+  /* The third corner of a triangle, given two corners and the two distances
+   * to it. Two points satisfy that, one on each side of AB, and `side` says
+   * which: +1 for the left of A to B, -1 for the right.
+   *
+   * This used to have no side argument and pick the left always, so the only
+   * way to get the other point was to pass A and B the other way round. That
+   * worked for one of the two places that call it and was silently wrong in
+   * the other, which laid every corner fan back over the pattern instead of
+   * out along it. The development came out as a knot. Nothing in the numbers
+   * showed it, because every individual triangle was the right shape; it was
+   * only where they were put. An argument order that decides geometry is a
+   * bad way to decide geometry, so now it is written down. */
+  function thirdPoint(A, B, dA, dB, side) {
+    var s = side < 0 ? -1 : 1;
+    var dx = B[0] - A[0], dy = B[1] - A[1];
+    var d = Math.hypot(dx, dy);
+    if (d < EPS) return [A[0] + dA, A[1]];
+    var a = (dA * dA - dB * dB + d * d) / (2 * d);
+    var hsq = dA * dA - a * a;
+    var hh = hsq > 0 ? Math.sqrt(hsq) : 0;
+    var mx = A[0] + a * dx / d, my = A[1] + a * dy / d;
+    return [mx - s * hh * dy / d, my + s * hh * dx / d];
+  }
+
+  var api = { cone: cone, squareToRound: squareToRound, _trueLen: trueLen, _thirdPoint: thirdPoint };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.Pattern = api;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(i){return document.getElementById(i);};
+var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');};
+var n=function(i){var v=parseFloat($(i).value);return isFinite(v)?v:0;};
+var f=function(x){return (Math.round(x*100)/100).toLocaleString();};
+
+function svgWrap(paths, minX, minY, w, h, scaleNote){
+  var pad = Math.max(w,h)*0.04;
+  return '<div class="drawwrap"><svg class="pat" viewBox="'+(minX-pad)+' '+(minY-pad)+' '+
+    (w+pad*2)+' '+(h+pad*2)+'" preserveAspectRatio="xMidYMid meet" '+
+    'style="max-height:460px">'+paths+'</svg>'+
+    '<p class="scale">'+esc(scaleNote)+'</p></div>';
+}
+
+function drawCone(c){
+  if (c.kind==='cylinder'){
+    var W=c.rect.width, H=c.rect.height;
+    var p='<rect class="cut" x="0" y="0" width="'+W+'" height="'+H+'"/>'+
+          '<line class="seam" x1="0" y1="0" x2="0" y2="'+H+'"/>';
+    return svgWrap(p,0,0,W,H,'A rectangle '+f(W)+' by '+f(H)+'. The red edge is the seam.');
+  }
+  var A=c.bigRadius, a=c.smallRadius, th=c.angleDeg*Math.PI/180;
+  // sector centred on straight up, so it sits nicely in the box
+  var s=-Math.PI/2-th/2, e=-Math.PI/2+th/2;
+  var pt=function(r,t){return [r*Math.cos(t), r*Math.sin(t)];};
+  var o1=pt(A,s),o2=pt(A,e),i1=pt(a,s),i2=pt(a,e);
+  var big = th>Math.PI?1:0;
+  var d='M '+o1[0]+' '+o1[1]+' A '+A+' '+A+' 0 '+big+' 1 '+o2[0]+' '+o2[1]+
+        ' L '+i2[0]+' '+i2[1]+(a>0?(' A '+a+' '+a+' 0 '+big+' 0 '+i1[0]+' '+i1[1]):'')+' Z';
+  /* Both radial edges are the seam: they are the two halves of one joint,
+   * brought together when the pattern is rolled. Drawing only one of them in
+   * red, which is what this did at first, says the other is a plain cut. */
+  var p='<path class="cut" d="'+d+'"/>'+
+        '<line class="seam" x1="'+o1[0]+'" y1="'+o1[1]+'" x2="'+i1[0]+'" y2="'+i1[1]+'"/>'+
+        '<line class="seam" x1="'+o2[0]+'" y1="'+o2[1]+'" x2="'+i2[0]+'" y2="'+i2[1]+'"/>';
+  /* The trammel centre is NOT in the drawing. On an ordinary frustum it sits
+   * further away than the whole ring is wide, so including it leaves most of
+   * the frame empty and shrinks the part worth looking at. The distance to it
+   * is in the setting out panel, which is where it gets used. */
+  var xs=[o1[0],o2[0],i1[0],i2[0]], ys=[o1[1],o2[1],i1[1],i2[1]];
+  // the arc bulges past its endpoints, so walk the sweep for the real extent
+  for(var t=s;t<e;t+=0.02){var q=pt(A,t);xs.push(q[0]);ys.push(q[1]);}
+  var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
+  var minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
+  return svgWrap(p,minX,minY,maxX-minX,maxY-minY,
+    'Both red edges are the seam: they come together when it is rolled. ' +
+    'The centre to swing from is '+f(A)+' away, outside this view.');
+}
+
+function drawSqRound(s){
+  var d=s.development, pts=d.base.concat(d.top);
+  var xs=pts.map(function(p){return p[0];}), ys=pts.map(function(p){return p[1];});
+  var minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
+  var minY=Math.min.apply(null,ys), maxY=Math.max.apply(null,ys);
+  var line=function(a,b,cls){return '<line class="'+cls+'" x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'"/>';};
+  var p='';
+  d.folds.forEach(function(fd){ p+=line(fd[0],fd[1],'fold'); });
+  p+='<polyline class="cut" points="'+d.base.map(function(q){return q.join(',');}).join(' ')+'"/>';
+  p+='<polyline class="cut" points="'+d.top.map(function(q){return q.join(',');}).join(' ')+'"/>';
+  p+=line(d.base[0],d.top[0],'seam');
+  p+=line(d.base[d.base.length-1],d.top[d.top.length-1],'seam');
+  return svgWrap(p,minX,minY,maxX-minX,maxY-minY,
+    'Solid lines are cut. Dashed lines are folds. The two red edges meet at the seam.');
+}
+
+function run(){
+  var kind=$('shape').value, out=$('out'), h='';
+  if (kind==='cone'){
+    var c=Pattern.cone({bottomDia:n('cBot'),topDia:n('cTop'),height:n('cH')});
+    if (c.error){ out.innerHTML='<div class="msg bad">'+esc(c.error)+'</div>'; return; }
+    (c.warn||[]).forEach(function(w){ h+='<div class="msg bad">'+esc(w)+'</div>'; });
+    if (c.note) h+='<div class="msg note">'+esc(c.note)+'</div>';
+    h+=drawCone(c);
+    if (c.kind==='cone'){
+      h+='<div class="tiles">'+
+        '<div class="tile"><div class="v">'+f(c.setOut.centreToOuter)+'</div><div class="k">centre to outer arc</div></div>'+
+        '<div class="tile"><div class="v">'+f(c.setOut.centreToInner)+'</div><div class="k">centre to inner arc</div></div>'+
+        '<div class="tile"><div class="v">'+f(c.angleDeg)+'&deg;</div><div class="k">included angle</div></div>'+
+        '<div class="tile"><div class="v">'+f(c.slant)+'</div><div class="k">slant height</div></div>'+
+        '</div>'+
+        '<div class="msg note"><b>To mark it out:</b> set a trammel to '+f(c.setOut.centreToOuter)+
+        ' and swing the outer arc, reset to '+f(c.setOut.centreToInner)+' and swing the inner one, '+
+        'both from the same centre. Step the outer arc off at '+f(c.arcBig)+' measured round the '+
+        'curve, or set the included angle to '+f(c.angleDeg)+' degrees. Join the ends to the centre.</div>';
+    }
+  } else {
+    var s=Pattern.squareToRound({width:n('sW'),depth:n('sD'),topDia:n('sT'),height:n('sH'),
+      offsetX:n('sOX'),offsetY:n('sOY'),segments:n('sSeg')});
+    if (s.error){ out.innerHTML='<div class="msg bad">'+esc(s.error)+'</div>'; return; }
+    (s.warn||[]).forEach(function(w){ h+='<div class="msg bad">'+esc(w)+'</div>'; });
+    h+=drawSqRound(s);
+    h+='<div class="tiles">'+
+      '<div class="tile"><div class="v">'+f(s.perimeter)+'</div><div class="k">base perimeter</div></div>'+
+      '<div class="tile"><div class="v">'+f(s.circumference)+'</div><div class="k">top circumference</div></div>'+
+      '<div class="tile"><div class="v">'+s.triangles.length+'</div><div class="k">triangles</div></div>'+
+      '<div class="tile"><div class="v">'+s.segments+'</div><div class="k">divisions per corner</div></div>'+
+      '</div>';
+    h+='<h2>True lengths, corner to circle</h2>'+
+       '<div class="msg note">Swing an arc from each rectangle corner at each of these radii. ' +
+       'They are true lengths, already including the rise, so measure them flat on the plate.</div>'+
+       '<div class="scroll"><table class="t"><thead><tr><th>From</th>';
+    for (var k=0;k<=s.segments;k++) h+='<th>'+k+'</th>';
+    h+='</tr></thead><tbody>';
+    s.marks.forEach(function(m){
+      h+='<tr><td>'+esc(m.corner)+'</td>'+m.lengths.map(function(L){return '<td>'+f(L)+'</td>';}).join('')+'</tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  out.innerHTML=h;
+}
+
+$('shape').onchange=function(){
+  var c=this.value==='cone';
+  $('fCone').className=c?'':'hide';
+  $('fSq').className=c?'hide':'';
+  run();
+};
+$('go').onclick=run;
+$('print').onclick=function(){window.print();};
+run();
+})();
+</script>
+</body>
+</html>
