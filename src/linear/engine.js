@@ -178,6 +178,10 @@
   }
 
   function round(n) { return Math.round(n * 1000) / 1000; }
+  /* Percentages are read by a person standing at a saw, not by another
+   * program, and "24.767% used" is three digits of false confidence about a
+   * bar that is a quarter full. One decimal, and none when it is whole. */
+  function pct(n) { return String(Math.round(n * 10) / 10); }
 
   function present(sol, stock, o, problems) {
     var bars = sol.bars.map(function (b, i) {
@@ -254,7 +258,7 @@
     if (bars.length > 1 && lastBar && lastBar.usedPct < 40) {
       notes.push({
         kind: 'tail',
-        text: 'The last bar is only ' + lastBar.usedPct + '% used. If this job can carry a few spare ' +
+        text: 'The last bar is only ' + pct(lastBar.usedPct) + '% used. If this job can carry a few spare ' +
               'pieces, adding them costs nothing: that bar is bought either way.',
       });
     }
