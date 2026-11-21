@@ -62,7 +62,14 @@ page = page.replace('<!-- SIBLING -->', () =>
   '<p><b>Cutting sheet goods instead?</b> The <a href="../cutlist/">cut list calculator</a> does ' +
   'the same job for plywood, MDF and any sheet material, with the grain direction respected.</p>' +
   '<p><b>Making a cone or a transition piece?</b> The <a href="../transition-pattern/">flat pattern ' +
-  'layout</a> develops it and gives the true lengths to mark it out.</p>');
+  'layout</a> develops it and gives the true lengths to mark it out.</p>' +
+  /* The one line on this page that is selling something. It goes last, it
+   * says what the free tool already does so nobody buys what they have, and
+   * it names the single thing a page with no memory cannot do. */
+  '<p><b>Cutting the same material every week?</b> This page forgets your offcuts the moment ' +
+  'you close it. <a href="https://flatfile.gumroad.com/l/cutpro">Cut Optimizer Pro</a> keeps a ' +
+  'rack of them between jobs and cuts the next job out of the rack before you order anything ' +
+  'new. Same solver, same offline file, $49 once.</p>');
 
 const bad = [
   [!page.includes('/* ENGINE_INLINE */'), 'the engine marker is still there'],
