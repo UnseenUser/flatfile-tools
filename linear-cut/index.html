@@ -1,0 +1,700 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Linear Cut Optimizer for Bar, Pipe and Profile</title>
+<meta name="description" content="Work out how to cut bar, pipe, tube, angle or rebar with the least waste. Subtracts the saw kerf from every cut, handles several stock lengths at once, and shows which offcuts are worth keeping. Runs in the browser and sends nothing anywhere.">
+<link rel="canonical" href="https://unseenuser.github.io/flatfile-tools/linear-cut/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Linear Cut Optimizer for Bar, Pipe and Profile">
+<meta property="og:description" content="Work out how to cut bar, pipe, tube, angle or rebar with the least waste. Subtracts the saw kerf from every cut, handles several stock lengths at once, and shows which offcuts are worth keeping. Runs in the browser and sends nothing anywhere.">
+<meta property="og:url" content="https://unseenuser.github.io/flatfile-tools/linear-cut/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"Linear Cut Optimizer","description":"Work out how to cut bar, pipe, tube, angle or rebar with the least waste. Subtracts the saw kerf from every cut, handles several stock lengths at once, and shows which offcuts are worth keeping. Runs in the browser and sends nothing anywhere.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any, runs in a web browser","url":"https://unseenuser.github.io/flatfile-tools/linear-cut/","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"featureList":["Cutting plan for bar, pipe, tube, angle and rebar","Saw kerf subtracted from every cut","Several stock lengths compared at once","Limited stock respected","Offcuts worth keeping marked","Works offline"]}</script>
+<style>
+/* One column, the form above the result, because the result is what gets
+   printed and carried to the saw. Palette from the Flat File covers. */
+:root{
+  --paper:#F2F1EC; --card:#FBFAF7; --ink:#1A1A18; --muted:#6B6862; --line:#D9D6CD;
+  --red:#BE4330; --green:#2F6B36; --blue:#3C6E9B; --sunk:#EAE8E1;
+  --bar:#DDD9D0; --fill:#C7D3C2; --fill2:#D9CFC2; --off:#F0EDE6;
+  --he:'Heebo',system-ui,sans-serif;
+  --ui:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141413; --card:#1C1C1A; --ink:#EDEBE4; --muted:#9B978D; --line:#2F2E2A;
+    --red:#E0705A; --green:#8FCB8B; --blue:#7FAEF0; --sunk:#232320;
+    --bar:#2A2A27; --fill:#35433A; --fill2:#433A2E; --off:#201F1D;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141413; --card:#1C1C1A; --ink:#EDEBE4; --muted:#9B978D; --line:#2F2E2A;
+  --red:#E0705A; --green:#8FCB8B; --blue:#7FAEF0; --sunk:#232320;
+  --bar:#2A2A27; --fill:#35433A; --fill2:#433A2E; --off:#201F1D;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--ui);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:36px 70px}
+.w{max-width:860px;margin:0 auto}
+h1{font-size:clamp(25px,5.5vw,33px);letter-spacing:-.025em;line-height:1.12;margin:0 0 8px;
+  font-weight:800;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 26px;max-width:58ch}
+h2{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-weight:700;margin:30px 0 10px}
+h3{font-size:17px;margin:26px 0 8px;letter-spacing:-.015em}
+
+.bar-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 20px}
+select,input,button{font:inherit;color:inherit}
+select,input[type=text],input[type=number]{background:var(--card);border:1px solid var(--line);
+  border-radius:5px;padding:7px 9px;min-width:0;width:100%}
+input[type=number]{font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+button{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:7px 13px;
+  cursor:pointer;font-weight:500}
+button:hover{border-color:var(--muted)}
+button.go{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:650;
+  padding:10px 22px}
+button.go:hover{opacity:.88}
+button.mini{padding:3px 8px;font-size:13px;color:var(--muted)}
+
+.scroll{overflow-x:auto;min-width:0}
+table.grid{width:100%;border-collapse:collapse;min-width:430px}
+table.grid th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;text-align:left;padding:0 8px 5px;white-space:nowrap}
+table.grid td{padding:3px 4px;vertical-align:middle}
+table.grid td:first-child{padding-left:0}
+.rm{color:var(--muted);border:0;background:none;cursor:pointer;padding:4px 7px;font-size:17px;line-height:1}
+.rm:hover{color:var(--red)}
+
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:12px}
+.opts label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:3px}
+.hint{color:var(--muted);font-size:14px;margin:10px 0 0;max-width:62ch}
+
+.msg{border-radius:6px;padding:11px 14px;margin:0 0 9px;font-size:15px;line-height:1.5}
+.msg.bad{background:rgba(190,67,48,.12);color:var(--red)}
+.msg.note{background:var(--sunk);color:var(--muted)}
+.msg.note b,.msg.bad b{color:inherit}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 20px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:11px 13px}
+.tile .v{font-size:23px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  line-height:1.15}
+.tile .k{font-size:11.5px;color:var(--muted);letter-spacing:.03em;margin-top:1px}
+.tile.hi .v{color:var(--green)}
+
+.barwrap{margin:0 0 15px;break-inside:avoid}
+.barhead{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:13.5px;
+  color:var(--muted);margin-bottom:5px}
+.barhead b{color:var(--ink);font-size:15px;font-weight:650}
+.barhead .sp{margin-left:auto;font-variant-numeric:tabular-nums}
+.stick{position:relative;height:40px;background:var(--bar);border:1px solid var(--line);
+  border-radius:3px;overflow:hidden;display:flex}
+.seg{position:relative;height:100%;border-right:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-size:11.5px;font-family:var(--mono);white-space:nowrap;padding:0 2px}
+.seg.p{background:var(--fill)}
+.seg.p:nth-child(even){background:var(--fill2)}
+.seg.o{background:var(--off);color:var(--muted);font-style:italic}
+.seg.t{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(128,128,128,.22) 3px,rgba(128,128,128,.22) 6px)}
+.cuts{font-size:12.5px;color:var(--muted);font-family:var(--mono);margin-top:4px;
+  display:flex;flex-wrap:wrap;gap:3px 12px}
+
+.prose{border-top:1.5px solid var(--line);margin-top:46px;padding-top:26px;max-width:64ch}
+.prose h3{margin-top:22px}
+.prose p{margin:0 0 13px}
+.prose a{color:inherit}
+footer{border-top:1.5px solid var(--line);margin-top:34px;padding-top:20px;
+  font-size:14px;color:var(--muted);max-width:64ch}
+footer b{color:var(--ink)}
+footer p{margin:0 0 10px}
+
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .noprint{display:none!important}
+  .stick{border-color:#999}
+  .seg.p{background:#e8e8e8}
+  .seg.p:nth-child(even){background:#d8d8d8}
+  .seg.o{background:#fff}
+}
+</style>
+</head>
+<body>
+<div class="w">
+
+  <h1>Linear Cut Optimizer</h1>
+  <p class="sub">Work out how to cut bar, pipe, tube, angle, rebar or any length stock with the
+  least waste. Subtracts the saw kerf from every cut, handles several stock lengths at once, and
+  tells you which offcuts are worth racking.</p>
+
+  <div class="bar-top noprint">
+    <select id="ex" style="max-width:270px">
+      <option value="">Load an example...</option>
+      <option value="frame">Steel frame, 40x40 box section</option>
+      <option value="handrail">Handrail job, 48mm tube</option>
+      <option value="rebar">Rebar schedule, 12m bars</option>
+      <option value="trim">Hardwood trim, mixed lengths</option>
+    </select>
+    <button id="print">Print</button>
+    <span style="flex:1"></span>
+    <button class="go" id="go">Calculate</button>
+  </div>
+
+  <h2>Pieces you need</h2>
+  <div class="scroll">
+    <table class="grid">
+      <thead><tr><th style="width:44%">Name</th><th style="width:26%">Length</th>
+        <th style="width:22%">Quantity</th><th></th></tr></thead>
+      <tbody id="parts"></tbody>
+    </table>
+  </div>
+  <button class="mini noprint" id="addPart">+ Add a piece</button>
+
+  <h2>Stock you can buy</h2>
+  <div class="scroll">
+    <table class="grid">
+      <thead><tr><th style="width:30%">Name</th><th style="width:20%">Length</th>
+        <th style="width:22%">How many</th><th style="width:22%">Cost each</th><th></th></tr></thead>
+      <tbody id="stock"></tbody>
+    </table>
+  </div>
+  <button class="mini noprint" id="addStock">+ Add a stock length</button>
+  <p class="hint noprint">Leave <b>How many</b> empty for "as many as I need". Fill it in when you
+  only have a few bars on the rack and want a plan that lives within them.</p>
+
+  <h2>Saw and stock</h2>
+  <div class="opts">
+    <div><label for="kerf">Saw kerf</label><input type="number" id="kerf" value="3" step="0.1" min="0"></div>
+    <div><label for="t1">Trim, start</label><input type="number" id="t1" value="0" step="0.1" min="0"></div>
+    <div><label for="t2">Trim, end</label><input type="number" id="t2" value="0" step="0.1" min="0"></div>
+    <div><label for="minoff">Offcut worth keeping</label><input type="number" id="minoff" value="300" step="1" min="0"></div>
+    <div><label for="cur">Currency</label><input type="text" id="cur" value="$" maxlength="4"></div>
+  </div>
+  <p class="hint noprint">Measure the kerf from a cut you made rather than reading the blade. On
+  twenty cuts a half-millimetre error is a centimetre of bar, which is exactly how the last piece
+  ends up short. Everything here is unitless: work in millimetres, inches or feet, as long as you
+  use the same one everywhere.</p>
+
+  <div id="out" style="margin-top:28px"></div>
+
+  <div class="prose">
+    <h3>What this does that a formula cannot</h3>
+    <p>Working out how much bar a job needs is arithmetic. Working out <em>which pieces share which
+    bar</em> is not: it is bin packing, and the number of ways to arrange thirty pieces across ten
+    bars is larger than anything you would check by hand. This runs a real packing pass over your
+    list, tries two dozen arrangements and keeps the best one it finds.</p>
+
+    <p>It does not promise the mathematical optimum, because nothing that returns an answer in a
+    fraction of a second can. It promises a plan that is normally within one bar of the best
+    possible, and it shows you the yield so you can judge it yourself.</p>
+
+    <h3>Why your yield is sometimes bad and nothing can fix it</h3>
+    <p>If a piece is longer than half a bar, no second piece can ever join it. Ten pieces at 3.1m
+    out of 6m bars is ten bars at 52% yield, and that is not the plan being poor, it is the job
+    being shaped that way. The only thing that changes it is a different stock length. When this
+    happens the tool says so under the results, rather than leaving you to wonder.</p>
+
+    <h3>The kerf, and the direction the error runs</h3>
+    <p>Every cut turns a few millimetres into dust. Each piece here costs its own length plus one
+    kerf, including the last piece on the bar, because cutting it free of the remainder is a real
+    cut. When pieces happen to finish flush with the end, that charges one kerf more than reality.
+    That is deliberate. A plan that is one kerf pessimistic leaves a few millimetres spare; a plan
+    that is one kerf optimistic leaves the last piece short, and a short piece is scrap.</p>
+
+    <h3>Offcuts are not waste</h3>
+    <p>Set <b>offcut worth keeping</b> to the shortest remainder you would actually rack rather
+    than skip, and the results mark which bars leave something worth putting back. On a repeating
+    job that figure is often the difference between the material cost you planned and the one you
+    paid.</p>
+
+    <h3>It sends nothing anywhere</h3>
+    <p>This page runs entirely in your browser. There is no account, no upload and no server: once
+    the page has loaded it contacts nothing at all, and it keeps working with the network off.
+    Nothing you type is sent anywhere, which for anyone pricing a job from a client's drawings is
+    the only arrangement worth having.</p>
+  </div>
+
+  <footer>
+    <p><b>Free to use</b>, for anything, including work you are paid for.</p>
+    <p><b>Check it before you cut.</b> The plan is only as right as the kerf, stock length and trim
+    you typed in. Measure your blade, check the first bar against the plan with a tape before you
+    cut the second, and cut the cheapest material first. Sold as is, with no warranty of any kind.</p>
+    <p><b>Something wrong, or a plan that came out worse than you could do by hand?</b>
+    Write to rahovichmichael@gmail.com. A bad plan with the numbers that produced it is the most
+    useful thing you can send.</p>
+    <p><b>Cutting sheet goods instead?</b> The <a href="../cutlist/">cut list calculator</a> does the same job for plywood, MDF and any sheet material, with the grain direction respected.</p>
+  </footer>
+</div>
+
+<script>
+/* The solver. One-dimensional cutting stock, with a saw that eats material.
+ *
+ * This is the part a general calculator site cannot copy onto a page, because
+ * it is not a formula. Deciding which pieces share a bar so that the fewest
+ * bars are bought is bin packing, which is NP-hard, so what follows is a good
+ * heuristic rather than a proof of the optimum, and the panel says so.
+ *
+ * THE KERF RULE, which is the thing people get wrong.
+ *
+ * Every cut turns a few millimetres of bar into dust. A piece therefore costs
+ * its own length PLUS one kerf, including the last piece on the bar: you cut
+ * it free of the remainder, and that cut is real. The only cut that does not
+ * exist is the one past the end of the bar, so when pieces finish flush the
+ * model has charged one kerf too many.
+ *
+ * That error is deliberate and it is always in the safe direction. A plan that
+ * is one kerf pessimistic leaves 3mm spare. A plan that is one kerf optimistic
+ * leaves the last piece 3mm short, and a short piece is scrap.
+ */
+(function (root) {
+  'use strict';
+
+  var EPS = 1e-9;
+
+  function clone(o) { return JSON.parse(JSON.stringify(o)); }
+
+  /* What one bar of this stock can hold once the ends are trimmed. */
+  function usable(stock, o) {
+    return stock.length - (o.trimStart || 0) - (o.trimEnd || 0);
+  }
+
+  /* Expand "4 of 820mm" into four pieces, longest first. Ties are broken by a
+   * supplied jitter so restarts explore genuinely different packings rather
+   * than recomputing the same one. */
+  function expand(parts, jitter) {
+    var out = [];
+    parts.forEach(function (p, i) {
+      var n = Math.max(0, Math.round(p.qty || 0));
+      for (var k = 0; k < n; k++) {
+        out.push({ label: p.label || ('Part ' + (i + 1)), length: p.length, src: i, j: jitter ? jitter() : 0 });
+      }
+    });
+    out.sort(function (a, b) { return (b.length - a.length) || (a.j - b.j); });
+    return out;
+  }
+
+  /* Fill one bar as full as it will go: repeatedly take the longest piece that
+   * still fits. Best-fit-decreasing, which is what a person does by eye and is
+   * within a few percent of optimal on real cutting lists. */
+  function fillBar(room, pool, kerf) {
+    var pieces = [], left = room;
+    for (var pass = 0; pass < pool.length; pass++) {
+      var bestIdx = -1;
+      for (var i = 0; i < pool.length; i++) {
+        if (pool[i].taken) continue;
+        if (pool[i].length + kerf <= left + EPS) { bestIdx = i; break; }  // pool is sorted desc
+      }
+      if (bestIdx < 0) break;
+      pool[bestIdx].taken = true;
+      pieces.push(pool[bestIdx]);
+      left -= pool[bestIdx].length + kerf;
+    }
+    return { pieces: pieces, left: left };
+  }
+
+  /* One complete attempt. Opens bars until every piece is placed, choosing the
+   * stock type for each bar by what it actually wastes rather than by size. */
+  function attempt(parts, stock, o, jitter) {
+    var kerf = o.kerf || 0;
+    var pool = expand(parts, jitter);
+    var remaining = {};                       // how many bars of each type are left
+    stock.forEach(function (s, i) { remaining[i] = (s.qty === null || s.qty === undefined) ? Infinity : s.qty; });
+
+    var bars = [], guard = 0;
+    while (pool.some(function (p) { return !p.taken; })) {
+      if (++guard > 10000) break;             // nothing should need this; it stops a hang
+
+      var best = null;
+      for (var si = 0; si < stock.length; si++) {
+        if (remaining[si] <= 0) continue;
+        var room = usable(stock[si], o);
+        if (room <= 0) continue;
+
+        /* Try this bar on a copy of the pool, so the trial does not consume. */
+        var marks = pool.map(function (p) { return p.taken; });
+        var got = fillBar(room, pool, kerf);
+        pool.forEach(function (p, i) { p.taken = marks[i]; });
+
+        if (!got.pieces.length) continue;
+        var cost = stock[si].cost || 0;
+        /* Rank by waste per unit of bar bought, so a long bar is not preferred
+         * merely for swallowing more pieces, and cost breaks the tie when the
+         * user gave prices. */
+        var score = (got.left / room) + (cost ? cost / 1e6 : 0);
+        if (!best || score < best.score - EPS) best = { si: si, score: score, room: room };
+      }
+
+      if (!best) break;                        // nothing left that fits anything
+
+      var room2 = best.room;
+      var filled = fillBar(room2, pool, kerf);
+      remaining[best.si]--;
+      bars.push({ stock: best.si, pieces: filled.pieces, left: filled.left, room: room2 });
+    }
+
+    var unplaced = pool.filter(function (p) { return !p.taken; });
+    return { bars: bars, unplaced: unplaced, stock: stock, o: o };
+  }
+
+  function score(sol, stock) {
+    var cost = 0;
+    sol.bars.forEach(function (b) { cost += (stock[b.stock].cost || 0); });
+    var waste = sol.bars.reduce(function (a, b) { return a + b.left; }, 0);
+    /* Unplaced pieces dominate everything: a plan that leaves work out is not
+     * a cheaper plan, it is a wrong one. */
+    return [sol.unplaced.length, sol.bars.length, cost, waste];
+  }
+
+  function better(a, b) {
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] < b[i] - EPS) return true;
+      if (a[i] > b[i] + EPS) return false;
+    }
+    return false;
+  }
+
+  /* A small deterministic generator, so the same input always gives the same
+   * plan. A cutting list that changed between two presses of the button would
+   * be impossible to trust or to check against a printout. */
+  function rng(seed) {
+    var s = seed >>> 0;
+    return function () { s = (s * 1664525 + 1013904223) >>> 0; return s / 4294967296; };
+  }
+
+  function plan(input) {
+    var parts = (input.parts || []).filter(function (p) { return p.length > 0 && p.qty > 0; });
+    var stock = (input.stock || []).filter(function (s) { return s.length > 0; });
+    var o = {
+      kerf: input.kerf || 0,
+      trimStart: input.trimStart || 0,
+      trimEnd: input.trimEnd || 0,
+      minOffcut: input.minOffcut || 0,
+    };
+
+    var problems = [];
+    if (!parts.length) problems.push({ kind: 'empty', text: 'No parts yet. Add what you need cut.' });
+    if (!stock.length) problems.push({ kind: 'empty', text: 'No stock yet. Add the lengths you can buy.' });
+
+    /* A piece longer than any bar can never be cut, and saying so before the
+     * run is worth more than discovering it in the results. */
+    var longest = 0;
+    stock.forEach(function (s) { longest = Math.max(longest, usable(s, o)); });
+    parts.forEach(function (p) {
+      if (p.length + o.kerf > longest + EPS) {
+        problems.push({
+          kind: 'toolong',
+          text: '"' + (p.label || 'A part') + '" is ' + p.length + ' long. The longest bar gives you ' +
+                round(longest) + ' after trim, and the cut takes ' + o.kerf + ' more. It cannot be cut from this stock.',
+        });
+      }
+    });
+
+    if (!parts.length || !stock.length) {
+      return { bars: [], problems: problems, summary: null };
+    }
+
+    /* Several attempts, keeping the best. The first is the plain
+     * longest-first pass; the rest shuffle ties. */
+    var best = attempt(parts, stock, o, null), bestScore = score(best, stock);
+    for (var t = 1; t < 24; t++) {
+      var r = rng(t * 7919);
+      var s2 = attempt(parts, stock, o, function () { return r(); });
+      var sc = score(s2, stock);
+      if (better(sc, bestScore)) { best = s2; bestScore = sc; }
+    }
+
+    return present(best, stock, o, problems);
+  }
+
+  function round(n) { return Math.round(n * 1000) / 1000; }
+
+  function present(sol, stock, o, problems) {
+    var bars = sol.bars.map(function (b, i) {
+      var at = o.trimStart || 0, pieces = [];
+      b.pieces.forEach(function (p) {
+        pieces.push({ label: p.label, length: p.length, start: round(at) });
+        at += p.length + o.kerf;
+      });
+      var cuts = b.pieces.length;
+      var offcut = b.left;
+      return {
+        index: i + 1,
+        stockLabel: stock[b.stock].label || ('Stock ' + (b.stock + 1)),
+        stockLength: stock[b.stock].length,
+        room: round(b.room),
+        pieces: pieces,
+        cuts: cuts,
+        kerfTotal: round(cuts * (o.kerf || 0)),
+        offcut: round(offcut),
+        /* An offcut long enough to be worth racking is not waste, and a shop
+         * that treats it as waste throws away money. */
+        keep: offcut >= (o.minOffcut || 0) && (o.minOffcut || 0) > 0,
+        usedPct: round(100 * (1 - offcut / b.room)),
+      };
+    });
+
+    var byStock = {};
+    sol.bars.forEach(function (b) {
+      var k = stock[b.stock].label || ('Stock ' + (b.stock + 1));
+      byStock[k] = (byStock[k] || 0) + 1;
+    });
+
+    var boughtLength = sol.bars.reduce(function (a, b) { return a + stock[b.stock].length; }, 0);
+    var partLength = sol.bars.reduce(function (a, b) {
+      return a + b.pieces.reduce(function (x, p) { return x + p.length; }, 0);
+    }, 0);
+    var kerfLength = sol.bars.reduce(function (a, b) { return a + b.pieces.length * (o.kerf || 0); }, 0);
+    var trimLength = sol.bars.length * ((o.trimStart || 0) + (o.trimEnd || 0));
+    var offcutLength = sol.bars.reduce(function (a, b) { return a + b.left; }, 0);
+    var kept = bars.filter(function (b) { return b.keep; });
+
+    var cost = sol.bars.reduce(function (a, b) { return a + (stock[b.stock].cost || 0); }, 0);
+
+    /* Why the yield is what it is.
+     *
+     * A fabricator who sees 52% assumes the tool is bad. Often the job is just
+     * shaped that way: when a piece is more than half a bar, no second piece
+     * can ever join it, and one per bar IS the optimum. Saying so is the
+     * difference between a number and an answer, and it is the thing a
+     * one-formula clone of this page cannot do. */
+    var notes = [];
+    var over = {};
+    sol.bars.forEach(function (b) {
+      var room = b.room;
+      b.pieces.forEach(function (p) {
+        if (p.length + (o.kerf || 0) > room / 2) {
+          over[p.label] = (over[p.label] || 0) + 1;
+        }
+      });
+    });
+    var overNames = Object.keys(over);
+    var overCount = overNames.reduce(function (a, k) { return a + over[k]; }, 0);
+    if (overCount) {
+      notes.push({
+        kind: 'halfbar',
+        text: overCount + ' piece' + (overCount === 1 ? '' : 's') + ' (' + overNames.join(', ') +
+              ') take more than half a bar, so nothing else can share with them. Those bars are ' +
+              'already as full as they can be, and the waste on them is the job rather than the plan. ' +
+              'A different stock length is the only thing that changes it.',
+      });
+    }
+
+    var lastBar = bars[bars.length - 1];
+    if (bars.length > 1 && lastBar && lastBar.usedPct < 40) {
+      notes.push({
+        kind: 'tail',
+        text: 'The last bar is only ' + lastBar.usedPct + '% used. If this job can carry a few spare ' +
+              'pieces, adding them costs nothing: that bar is bought either way.',
+      });
+    }
+
+    if (sol.unplaced.length) {
+      problems = problems.concat([{
+        kind: 'unplaced',
+        text: sol.unplaced.length + ' piece' + (sol.unplaced.length === 1 ? '' : 's') +
+              ' could not be placed. Either the stock ran out, or they are longer than any bar.',
+      }]);
+    }
+
+    return {
+      bars: bars,
+      problems: problems,
+      notes: notes,
+      summary: {
+        barsUsed: sol.bars.length,
+        byStock: byStock,
+        boughtLength: round(boughtLength),
+        partLength: round(partLength),
+        kerfLength: round(kerfLength),
+        trimLength: round(trimLength),
+        offcutLength: round(offcutLength),
+        keptCount: kept.length,
+        keptLength: round(kept.reduce(function (a, b) { return a + b.offcut; }, 0)),
+        /* Yield is the honest headline: how much of what you buy leaves as
+         * parts. Everything else is dust, trim and remainder. */
+        yieldPct: boughtLength ? round(100 * partLength / boughtLength) : 0,
+        cost: round(cost),
+        unplaced: sol.unplaced.length,
+      },
+    };
+  }
+
+  var api = { plan: plan, _usable: usable, _expand: expand };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.LinearCut = api;
+})(typeof self !== 'undefined' ? self : this);
+
+</script>
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+var esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+var num = function(v, d){ var n = parseFloat(v); return isFinite(n) ? n : (d===undefined?0:d); };
+
+var EXAMPLES = {
+  frame: {
+    kerf:3, t1:0, t2:0, minoff:300,
+    parts:[['Upright',2400,8],['Rail',1800,12],['Brace',640,16],['Foot',300,8]],
+    stock:[['40x40 box, 6m',6000,'',42]],
+  },
+  handrail: {
+    kerf:2.5, t1:10, t2:10, minoff:250,
+    parts:[['Straight run',1150,9],['Return',430,14],['Post',1000,6]],
+    stock:[['48mm tube, 3m',3000,'',28],['48mm tube, 6m',6000,'',54]],
+  },
+  rebar: {
+    kerf:4, t1:0, t2:0, minoff:500,
+    parts:[['Main bar',5400,22],['Stirrup leg',1650,40],['Starter',900,18]],
+    stock:[['T16, 12m',12000,'',19.5]],
+  },
+  trim: {
+    kerf:3.2, t1:15, t2:15, minoff:400,
+    parts:[['Door casing',2100,6],['Skirting run',3650,4],['Architrave',820,12],['Plinth',180,10]],
+    stock:[['Oak, 2.4m',2400,'',31],['Oak, 4.2m',4200,'',58]],
+  },
+};
+
+function partRow(name, len, qty){
+  var tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" class="pn" value="'+esc(name)+'" placeholder="Upright"></td>'+
+    '<td><input type="number" class="pl" value="'+esc(len)+'" step="0.1" min="0"></td>'+
+    '<td><input type="number" class="pq" value="'+esc(qty)+'" step="1" min="0"></td>'+
+    '<td class="noprint"><button class="rm" title="Remove">&times;</button></td>';
+  tr.querySelector('.rm').onclick = function(){ tr.remove(); };
+  return tr;
+}
+function stockRow(name, len, qty, cost){
+  var tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" class="sn" value="'+esc(name)+'" placeholder="6m bar"></td>'+
+    '<td><input type="number" class="sl" value="'+esc(len)+'" step="0.1" min="0"></td>'+
+    '<td><input type="number" class="sq" value="'+esc(qty)+'" step="1" min="0" placeholder="any"></td>'+
+    '<td><input type="number" class="sc" value="'+esc(cost)+'" step="0.01" min="0" placeholder="0"></td>'+
+    '<td class="noprint"><button class="rm" title="Remove">&times;</button></td>';
+  tr.querySelector('.rm').onclick = function(){ tr.remove(); };
+  return tr;
+}
+
+function load(key){
+  var e = EXAMPLES[key]; if (!e) return;
+  $('parts').innerHTML=''; $('stock').innerHTML='';
+  e.parts.forEach(function(p){ $('parts').appendChild(partRow(p[0],p[1],p[2])); });
+  e.stock.forEach(function(s){ $('stock').appendChild(stockRow(s[0],s[1],s[2],s[3])); });
+  $('kerf').value=e.kerf; $('t1').value=e.t1; $('t2').value=e.t2; $('minoff').value=e.minoff;
+  run();
+}
+
+function read(){
+  var parts=[], stock=[];
+  [].forEach.call($('parts').children, function(tr,i){
+    parts.push({ label: tr.querySelector('.pn').value.trim() || ('Piece '+(i+1)),
+                 length: num(tr.querySelector('.pl').value),
+                 qty: Math.round(num(tr.querySelector('.pq').value)) });
+  });
+  [].forEach.call($('stock').children, function(tr,i){
+    var q = tr.querySelector('.sq').value.trim();
+    stock.push({ label: tr.querySelector('.sn').value.trim() || ('Stock '+(i+1)),
+                 length: num(tr.querySelector('.sl').value),
+                 qty: q === '' ? null : Math.round(num(q)),
+                 cost: num(tr.querySelector('.sc').value) });
+  });
+  return { parts:parts, stock:stock, kerf:num($('kerf').value),
+           trimStart:num($('t1').value), trimEnd:num($('t2').value),
+           minOffcut:num($('minoff').value) };
+}
+
+function fmt(n){
+  if (!isFinite(n)) return '0';
+  var r = Math.round(n*100)/100;
+  return String(r).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function run(){
+  var inp = read();
+  var r = LinearCut.plan(inp);
+  var out = $('out'), h = '';
+
+  (r.problems||[]).forEach(function(p){
+    h += '<div class="msg bad">'+esc(p.text)+'</div>';
+  });
+
+  if (!r.summary){ out.innerHTML = h || '<div class="msg note">Add your pieces and your stock, then press Calculate.</div>'; return; }
+
+  var s = r.summary, cur = $('cur').value || '';
+  h += '<div class="tiles">';
+  h += '<div class="tile"><div class="v">'+s.barsUsed+'</div><div class="k">bars needed</div></div>';
+  h += '<div class="tile hi"><div class="v">'+fmt(s.yieldPct)+'%</div><div class="k">yield</div></div>';
+  h += '<div class="tile"><div class="v">'+fmt(s.offcutLength)+'</div><div class="k">left over</div></div>';
+  h += '<div class="tile"><div class="v">'+fmt(s.kerfLength)+'</div><div class="k">lost to the saw</div></div>';
+  if (s.cost) h += '<div class="tile"><div class="v">'+esc(cur)+fmt(s.cost)+'</div><div class="k">material</div></div>';
+  if (s.keptCount) h += '<div class="tile"><div class="v">'+s.keptCount+'</div><div class="k">offcuts to keep</div></div>';
+  h += '</div>';
+
+  var names = Object.keys(s.byStock);
+  if (names.length){
+    h += '<div class="msg note"><b>Buy:</b> ' + names.map(function(k){
+      return s.byStock[k] + ' x ' + esc(k); }).join(' &middot; ') + '</div>';
+  }
+  (r.notes||[]).forEach(function(n){ h += '<div class="msg note">'+esc(n.text)+'</div>'; });
+
+  h += '<h2 style="margin-top:24px">The plan</h2>';
+
+  /* Bars cut the same way are one instruction, not four. A shop sets up once
+     and runs the batch, and a printout that repeats an identical bar four
+     times is four chances to lose your place in it. */
+  var groups = [];
+  r.bars.forEach(function(b){
+    var key = b.stockLabel + '|' + b.pieces.map(function(p){ return p.label+':'+p.length; }).join(',');
+    var last = groups[groups.length-1];
+    if (last && last.key === key) { last.n++; last.last = b.index; }
+    else groups.push({ key:key, n:1, first:b.index, last:b.index, bar:b });
+  });
+
+  groups.forEach(function(g){
+    var b = g.bar;
+    var title = g.n === 1 ? 'Bar ' + g.first
+              : 'Bars ' + g.first + ' to ' + g.last + ' &middot; ' + g.n + ' the same';
+    h += '<div class="barwrap"><div class="barhead"><b>'+title+'</b> '+esc(b.stockLabel)+
+         '<span class="sp">'+fmt(b.usedPct)+'% used'+
+         (b.keep ? ' &middot; keep '+fmt(b.offcut)+(g.n>1?' each':'') : '')+'</span></div><div class="stick">';
+    var total = b.stockLength;
+    var t1 = inp.trimStart, t2 = inp.trimEnd;
+    if (t1>0) h += '<div class="seg t" style="width:'+(100*t1/total)+'%"></div>';
+    b.pieces.forEach(function(p){
+      var w = 100*p.length/total;
+      h += '<div class="seg p" style="width:'+w+'%" title="'+esc(p.label)+' at '+fmt(p.start)+'">'+
+           (w > 7 ? esc(p.label) : '') + '</div>';
+      if (inp.kerf>0) h += '<div class="seg" style="width:'+(100*inp.kerf/total)+'%;background:var(--line)"></div>';
+    });
+    if (b.offcut>0) h += '<div class="seg o" style="width:'+(100*b.offcut/total)+'%">'+
+      (100*b.offcut/total > 10 ? fmt(b.offcut) : '')+'</div>';
+    if (t2>0) h += '<div class="seg t" style="width:'+(100*t2/total)+'%"></div>';
+    h += '</div><div class="cuts">';
+    b.pieces.forEach(function(p){ h += '<span>'+esc(p.label)+' @ '+fmt(p.start)+'</span>'; });
+    h += '</div></div>';
+  });
+
+  out.innerHTML = h;
+}
+
+$('addPart').onclick = function(){ $('parts').appendChild(partRow('', '', 1)); };
+$('addStock').onclick = function(){ $('stock').appendChild(stockRow('', '', '', '')); };
+$('go').onclick = run;
+$('print').onclick = function(){ window.print(); };
+$('ex').onchange = function(){ if (this.value) load(this.value); };
+
+/* Open on a real job rather than an empty form: somebody who lands here from a
+   search should see what the tool does before typing anything. */
+load('frame');
+})();
+</script>
+</body>
+</html>

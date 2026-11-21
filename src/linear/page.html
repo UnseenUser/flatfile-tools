@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Linear Cut Optimizer for Bar, Pipe and Profile</title>
+<!-- HEAD_EXTRA -->
+<style>
+/* One column, the form above the result, because the result is what gets
+   printed and carried to the saw. Palette from the Flat File covers. */
+:root{
+  --paper:#F2F1EC; --card:#FBFAF7; --ink:#1A1A18; --muted:#6B6862; --line:#D9D6CD;
+  --red:#BE4330; --green:#2F6B36; --blue:#3C6E9B; --sunk:#EAE8E1;
+  --bar:#DDD9D0; --fill:#C7D3C2; --fill2:#D9CFC2; --off:#F0EDE6;
+  --he:'Heebo',system-ui,sans-serif;
+  --ui:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#141413; --card:#1C1C1A; --ink:#EDEBE4; --muted:#9B978D; --line:#2F2E2A;
+    --red:#E0705A; --green:#8FCB8B; --blue:#7FAEF0; --sunk:#232320;
+    --bar:#2A2A27; --fill:#35433A; --fill2:#433A2E; --off:#201F1D;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141413; --card:#1C1C1A; --ink:#EDEBE4; --muted:#9B978D; --line:#2F2E2A;
+  --red:#E0705A; --green:#8FCB8B; --blue:#7FAEF0; --sunk:#232320;
+  --bar:#2A2A27; --fill:#35433A; --fill2:#433A2E; --off:#201F1D;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.6 var(--ui);
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:36px 70px}
+.w{max-width:860px;margin:0 auto}
+h1{font-size:clamp(25px,5.5vw,33px);letter-spacing:-.025em;line-height:1.12;margin:0 0 8px;
+  font-weight:800;text-wrap:balance}
+.sub{color:var(--muted);margin:0 0 26px;max-width:58ch}
+h2{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  font-weight:700;margin:30px 0 10px}
+h3{font-size:17px;margin:26px 0 8px;letter-spacing:-.015em}
+
+.bar-top{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 20px}
+select,input,button{font:inherit;color:inherit}
+select,input[type=text],input[type=number]{background:var(--card);border:1px solid var(--line);
+  border-radius:5px;padding:7px 9px;min-width:0;width:100%}
+input[type=number]{font-variant-numeric:tabular-nums}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+button{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:7px 13px;
+  cursor:pointer;font-weight:500}
+button:hover{border-color:var(--muted)}
+button.go{background:var(--ink);color:var(--paper);border-color:var(--ink);font-weight:650;
+  padding:10px 22px}
+button.go:hover{opacity:.88}
+button.mini{padding:3px 8px;font-size:13px;color:var(--muted)}
+
+.scroll{overflow-x:auto;min-width:0}
+table.grid{width:100%;border-collapse:collapse;min-width:430px}
+table.grid th{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+  font-weight:600;text-align:left;padding:0 8px 5px;white-space:nowrap}
+table.grid td{padding:3px 4px;vertical-align:middle}
+table.grid td:first-child{padding-left:0}
+.rm{color:var(--muted);border:0;background:none;cursor:pointer;padding:4px 7px;font-size:17px;line-height:1}
+.rm:hover{color:var(--red)}
+
+.opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(142px,1fr));gap:12px}
+.opts label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:3px}
+.hint{color:var(--muted);font-size:14px;margin:10px 0 0;max-width:62ch}
+
+.msg{border-radius:6px;padding:11px 14px;margin:0 0 9px;font-size:15px;line-height:1.5}
+.msg.bad{background:rgba(190,67,48,.12);color:var(--red)}
+.msg.note{background:var(--sunk);color:var(--muted)}
+.msg.note b,.msg.bad b{color:inherit}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:9px;margin:0 0 20px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:11px 13px}
+.tile .v{font-size:23px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;
+  line-height:1.15}
+.tile .k{font-size:11.5px;color:var(--muted);letter-spacing:.03em;margin-top:1px}
+.tile.hi .v{color:var(--green)}
+
+.barwrap{margin:0 0 15px;break-inside:avoid}
+.barhead{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:13.5px;
+  color:var(--muted);margin-bottom:5px}
+.barhead b{color:var(--ink);font-size:15px;font-weight:650}
+.barhead .sp{margin-left:auto;font-variant-numeric:tabular-nums}
+.stick{position:relative;height:40px;background:var(--bar);border:1px solid var(--line);
+  border-radius:3px;overflow:hidden;display:flex}
+.seg{position:relative;height:100%;border-right:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  font-size:11.5px;font-family:var(--mono);white-space:nowrap;padding:0 2px}
+.seg.p{background:var(--fill)}
+.seg.p:nth-child(even){background:var(--fill2)}
+.seg.o{background:var(--off);color:var(--muted);font-style:italic}
+.seg.t{background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(128,128,128,.22) 3px,rgba(128,128,128,.22) 6px)}
+.cuts{font-size:12.5px;color:var(--muted);font-family:var(--mono);margin-top:4px;
+  display:flex;flex-wrap:wrap;gap:3px 12px}
+
+.prose{border-top:1.5px solid var(--line);margin-top:46px;padding-top:26px;max-width:64ch}
+.prose h3{margin-top:22px}
+.prose p{margin:0 0 13px}
+.prose a{color:inherit}
+footer{border-top:1.5px solid var(--line);margin-top:34px;padding-top:20px;
+  font-size:14px;color:var(--muted);max-width:64ch}
+footer b{color:var(--ink)}
+footer p{margin:0 0 10px}
+
+@media print{
+  body{background:#fff;color:#000;padding:0}
+  .noprint{display:none!important}
+  .stick{border-color:#999}
+  .seg.p{background:#e8e8e8}
+  .seg.p:nth-child(even){background:#d8d8d8}
+  .seg.o{background:#fff}
+}
+</style>
+</head>
+<body>
+<div class="w">
+
+  <h1>Linear Cut Optimizer</h1>
+  <p class="sub">Work out how to cut bar, pipe, tube, angle, rebar or any length stock with the
+  least waste. Subtracts the saw kerf from every cut, handles several stock lengths at once, and
+  tells you which offcuts are worth racking.</p>
+
+  <div class="bar-top noprint">
+    <select id="ex" style="max-width:270px">
+      <option value="">Load an example...</option>
+      <option value="frame">Steel frame, 40x40 box section</option>
+      <option value="handrail">Handrail job, 48mm tube</option>
+      <option value="rebar">Rebar schedule, 12m bars</option>
+      <option value="trim">Hardwood trim, mixed lengths</option>
+    </select>
+    <button id="print">Print</button>
+    <span style="flex:1"></span>
+    <button class="go" id="go">Calculate</button>
+  </div>
+
+  <h2>Pieces you need</h2>
+  <div class="scroll">
+    <table class="grid">
+      <thead><tr><th style="width:44%">Name</th><th style="width:26%">Length</th>
+        <th style="width:22%">Quantity</th><th></th></tr></thead>
+      <tbody id="parts"></tbody>
+    </table>
+  </div>
+  <button class="mini noprint" id="addPart">+ Add a piece</button>
+
+  <h2>Stock you can buy</h2>
+  <div class="scroll">
+    <table class="grid">
+      <thead><tr><th style="width:30%">Name</th><th style="width:20%">Length</th>
+        <th style="width:22%">How many</th><th style="width:22%">Cost each</th><th></th></tr></thead>
+      <tbody id="stock"></tbody>
+    </table>
+  </div>
+  <button class="mini noprint" id="addStock">+ Add a stock length</button>
+  <p class="hint noprint">Leave <b>How many</b> empty for "as many as I need". Fill it in when you
+  only have a few bars on the rack and want a plan that lives within them.</p>
+
+  <h2>Saw and stock</h2>
+  <div class="opts">
+    <div><label for="kerf">Saw kerf</label><input type="number" id="kerf" value="3" step="0.1" min="0"></div>
+    <div><label for="t1">Trim, start</label><input type="number" id="t1" value="0" step="0.1" min="0"></div>
+    <div><label for="t2">Trim, end</label><input type="number" id="t2" value="0" step="0.1" min="0"></div>
+    <div><label for="minoff">Offcut worth keeping</label><input type="number" id="minoff" value="300" step="1" min="0"></div>
+    <div><label for="cur">Currency</label><input type="text" id="cur" value="$" maxlength="4"></div>
+  </div>
+  <p class="hint noprint">Measure the kerf from a cut you made rather than reading the blade. On
+  twenty cuts a half-millimetre error is a centimetre of bar, which is exactly how the last piece
+  ends up short. Everything here is unitless: work in millimetres, inches or feet, as long as you
+  use the same one everywhere.</p>
+
+  <div id="out" style="margin-top:28px"></div>
+
+  <div class="prose">
+    <h3>What this does that a formula cannot</h3>
+    <p>Working out how much bar a job needs is arithmetic. Working out <em>which pieces share which
+    bar</em> is not: it is bin packing, and the number of ways to arrange thirty pieces across ten
+    bars is larger than anything you would check by hand. This runs a real packing pass over your
+    list, tries two dozen arrangements and keeps the best one it finds.</p>
+
+    <p>It does not promise the mathematical optimum, because nothing that returns an answer in a
+    fraction of a second can. It promises a plan that is normally within one bar of the best
+    possible, and it shows you the yield so you can judge it yourself.</p>
+
+    <h3>Why your yield is sometimes bad and nothing can fix it</h3>
+    <p>If a piece is longer than half a bar, no second piece can ever join it. Ten pieces at 3.1m
+    out of 6m bars is ten bars at 52% yield, and that is not the plan being poor, it is the job
+    being shaped that way. The only thing that changes it is a different stock length. When this
+    happens the tool says so under the results, rather than leaving you to wonder.</p>
+
+    <h3>The kerf, and the direction the error runs</h3>
+    <p>Every cut turns a few millimetres into dust. Each piece here costs its own length plus one
+    kerf, including the last piece on the bar, because cutting it free of the remainder is a real
+    cut. When pieces happen to finish flush with the end, that charges one kerf more than reality.
+    That is deliberate. A plan that is one kerf pessimistic leaves a few millimetres spare; a plan
+    that is one kerf optimistic leaves the last piece short, and a short piece is scrap.</p>
+
+    <h3>Offcuts are not waste</h3>
+    <p>Set <b>offcut worth keeping</b> to the shortest remainder you would actually rack rather
+    than skip, and the results mark which bars leave something worth putting back. On a repeating
+    job that figure is often the difference between the material cost you planned and the one you
+    paid.</p>
+
+    <h3>It sends nothing anywhere</h3>
+    <p>This page runs entirely in your browser. There is no account, no upload and no server: once
+    the page has loaded it contacts nothing at all, and it keeps working with the network off.
+    Nothing you type is sent anywhere, which for anyone pricing a job from a client's drawings is
+    the only arrangement worth having.</p>
+  </div>
+
+  <footer>
+    <p><b>Free to use</b>, for anything, including work you are paid for.</p>
+    <p><b>Check it before you cut.</b> The plan is only as right as the kerf, stock length and trim
+    you typed in. Measure your blade, check the first bar against the plan with a tape before you
+    cut the second, and cut the cheapest material first. Sold as is, with no warranty of any kind.</p>
+    <p><b>Something wrong, or a plan that came out worse than you could do by hand?</b>
+    Write to rahovichmichael@gmail.com. A bad plan with the numbers that produced it is the most
+    useful thing you can send.</p>
+    <!-- SIBLING -->
+  </footer>
+</div>
+
+<script>
+/* ENGINE_INLINE */
+</script>
+<script>
+(function(){
+'use strict';
+var $ = function(id){ return document.getElementById(id); };
+var esc = function(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); };
+var num = function(v, d){ var n = parseFloat(v); return isFinite(n) ? n : (d===undefined?0:d); };
+
+var EXAMPLES = {
+  frame: {
+    kerf:3, t1:0, t2:0, minoff:300,
+    parts:[['Upright',2400,8],['Rail',1800,12],['Brace',640,16],['Foot',300,8]],
+    stock:[['40x40 box, 6m',6000,'',42]],
+  },
+  handrail: {
+    kerf:2.5, t1:10, t2:10, minoff:250,
+    parts:[['Straight run',1150,9],['Return',430,14],['Post',1000,6]],
+    stock:[['48mm tube, 3m',3000,'',28],['48mm tube, 6m',6000,'',54]],
+  },
+  rebar: {
+    kerf:4, t1:0, t2:0, minoff:500,
+    parts:[['Main bar',5400,22],['Stirrup leg',1650,40],['Starter',900,18]],
+    stock:[['T16, 12m',12000,'',19.5]],
+  },
+  trim: {
+    kerf:3.2, t1:15, t2:15, minoff:400,
+    parts:[['Door casing',2100,6],['Skirting run',3650,4],['Architrave',820,12],['Plinth',180,10]],
+    stock:[['Oak, 2.4m',2400,'',31],['Oak, 4.2m',4200,'',58]],
+  },
+};
+
+function partRow(name, len, qty){
+  var tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" class="pn" value="'+esc(name)+'" placeholder="Upright"></td>'+
+    '<td><input type="number" class="pl" value="'+esc(len)+'" step="0.1" min="0"></td>'+
+    '<td><input type="number" class="pq" value="'+esc(qty)+'" step="1" min="0"></td>'+
+    '<td class="noprint"><button class="rm" title="Remove">&times;</button></td>';
+  tr.querySelector('.rm').onclick = function(){ tr.remove(); };
+  return tr;
+}
+function stockRow(name, len, qty, cost){
+  var tr = document.createElement('tr');
+  tr.innerHTML =
+    '<td><input type="text" class="sn" value="'+esc(name)+'" placeholder="6m bar"></td>'+
+    '<td><input type="number" class="sl" value="'+esc(len)+'" step="0.1" min="0"></td>'+
+    '<td><input type="number" class="sq" value="'+esc(qty)+'" step="1" min="0" placeholder="any"></td>'+
+    '<td><input type="number" class="sc" value="'+esc(cost)+'" step="0.01" min="0" placeholder="0"></td>'+
+    '<td class="noprint"><button class="rm" title="Remove">&times;</button></td>';
+  tr.querySelector('.rm').onclick = function(){ tr.remove(); };
+  return tr;
+}
+
+function load(key){
+  var e = EXAMPLES[key]; if (!e) return;
+  $('parts').innerHTML=''; $('stock').innerHTML='';
+  e.parts.forEach(function(p){ $('parts').appendChild(partRow(p[0],p[1],p[2])); });
+  e.stock.forEach(function(s){ $('stock').appendChild(stockRow(s[0],s[1],s[2],s[3])); });
+  $('kerf').value=e.kerf; $('t1').value=e.t1; $('t2').value=e.t2; $('minoff').value=e.minoff;
+  run();
+}
+
+function read(){
+  var parts=[], stock=[];
+  [].forEach.call($('parts').children, function(tr,i){
+    parts.push({ label: tr.querySelector('.pn').value.trim() || ('Piece '+(i+1)),
+                 length: num(tr.querySelector('.pl').value),
+                 qty: Math.round(num(tr.querySelector('.pq').value)) });
+  });
+  [].forEach.call($('stock').children, function(tr,i){
+    var q = tr.querySelector('.sq').value.trim();
+    stock.push({ label: tr.querySelector('.sn').value.trim() || ('Stock '+(i+1)),
+                 length: num(tr.querySelector('.sl').value),
+                 qty: q === '' ? null : Math.round(num(q)),
+                 cost: num(tr.querySelector('.sc').value) });
+  });
+  return { parts:parts, stock:stock, kerf:num($('kerf').value),
+           trimStart:num($('t1').value), trimEnd:num($('t2').value),
+           minOffcut:num($('minoff').value) };
+}
+
+function fmt(n){
+  if (!isFinite(n)) return '0';
+  var r = Math.round(n*100)/100;
+  return String(r).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+function run(){
+  var inp = read();
+  var r = LinearCut.plan(inp);
+  var out = $('out'), h = '';
+
+  (r.problems||[]).forEach(function(p){
+    h += '<div class="msg bad">'+esc(p.text)+'</div>';
+  });
+
+  if (!r.summary){ out.innerHTML = h || '<div class="msg note">Add your pieces and your stock, then press Calculate.</div>'; return; }
+
+  var s = r.summary, cur = $('cur').value || '';
+  h += '<div class="tiles">';
+  h += '<div class="tile"><div class="v">'+s.barsUsed+'</div><div class="k">bars needed</div></div>';
+  h += '<div class="tile hi"><div class="v">'+fmt(s.yieldPct)+'%</div><div class="k">yield</div></div>';
+  h += '<div class="tile"><div class="v">'+fmt(s.offcutLength)+'</div><div class="k">left over</div></div>';
+  h += '<div class="tile"><div class="v">'+fmt(s.kerfLength)+'</div><div class="k">lost to the saw</div></div>';
+  if (s.cost) h += '<div class="tile"><div class="v">'+esc(cur)+fmt(s.cost)+'</div><div class="k">material</div></div>';
+  if (s.keptCount) h += '<div class="tile"><div class="v">'+s.keptCount+'</div><div class="k">offcuts to keep</div></div>';
+  h += '</div>';
+
+  var names = Object.keys(s.byStock);
+  if (names.length){
+    h += '<div class="msg note"><b>Buy:</b> ' + names.map(function(k){
+      return s.byStock[k] + ' x ' + esc(k); }).join(' &middot; ') + '</div>';
+  }
+  (r.notes||[]).forEach(function(n){ h += '<div class="msg note">'+esc(n.text)+'</div>'; });
+
+  h += '<h2 style="margin-top:24px">The plan</h2>';
+
+  /* Bars cut the same way are one instruction, not four. A shop sets up once
+     and runs the batch, and a printout that repeats an identical bar four
+     times is four chances to lose your place in it. */
+  var groups = [];
+  r.bars.forEach(function(b){
+    var key = b.stockLabel + '|' + b.pieces.map(function(p){ return p.label+':'+p.length; }).join(',');
+    var last = groups[groups.length-1];
+    if (last && last.key === key) { last.n++; last.last = b.index; }
+    else groups.push({ key:key, n:1, first:b.index, last:b.index, bar:b });
+  });
+
+  groups.forEach(function(g){
+    var b = g.bar;
+    var title = g.n === 1 ? 'Bar ' + g.first
+              : 'Bars ' + g.first + ' to ' + g.last + ' &middot; ' + g.n + ' the same';
+    h += '<div class="barwrap"><div class="barhead"><b>'+title+'</b> '+esc(b.stockLabel)+
+         '<span class="sp">'+fmt(b.usedPct)+'% used'+
+         (b.keep ? ' &middot; keep '+fmt(b.offcut)+(g.n>1?' each':'') : '')+'</span></div><div class="stick">';
+    var total = b.stockLength;
+    var t1 = inp.trimStart, t2 = inp.trimEnd;
+    if (t1>0) h += '<div class="seg t" style="width:'+(100*t1/total)+'%"></div>';
+    b.pieces.forEach(function(p){
+      var w = 100*p.length/total;
+      h += '<div class="seg p" style="width:'+w+'%" title="'+esc(p.label)+' at '+fmt(p.start)+'">'+
+           (w > 7 ? esc(p.label) : '') + '</div>';
+      if (inp.kerf>0) h += '<div class="seg" style="width:'+(100*inp.kerf/total)+'%;background:var(--line)"></div>';
+    });
+    if (b.offcut>0) h += '<div class="seg o" style="width:'+(100*b.offcut/total)+'%">'+
+      (100*b.offcut/total > 10 ? fmt(b.offcut) : '')+'</div>';
+    if (t2>0) h += '<div class="seg t" style="width:'+(100*t2/total)+'%"></div>';
+    h += '</div><div class="cuts">';
+    b.pieces.forEach(function(p){ h += '<span>'+esc(p.label)+' @ '+fmt(p.start)+'</span>'; });
+    h += '</div></div>';
+  });
+
+  out.innerHTML = h;
+}
+
+$('addPart').onclick = function(){ $('parts').appendChild(partRow('', '', 1)); };
+$('addStock').onclick = function(){ $('stock').appendChild(stockRow('', '', '', '')); };
+$('go').onclick = run;
+$('print').onclick = function(){ window.print(); };
+$('ex').onchange = function(){ if (this.value) load(this.value); };
+
+/* Open on a real job rather than an empty form: somebody who lands here from a
+   search should see what the tool does before typing anything. */
+load('frame');
+})();
+</script>
+</body>
+</html>
